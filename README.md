@@ -1,2 +1,2 @@
 # S5-Projet
-Git pour le porjet de session de S5
+Git pour le projet de session de S5
