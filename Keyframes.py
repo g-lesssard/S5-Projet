@@ -1,7 +1,9 @@
 import bpy
+import bmesh
 import sys
 import os
-# from vectors import Point, Vector
+import numpy as np
+import math
 
 dir = os.path.dirname(bpy.data.filepath)
 if not dir in sys.path:
@@ -18,7 +20,11 @@ from Cinematique import *
 
 # Keyframe inserter
 
-path_test = projectile_path(250, 0.25, Vector(0.0, 0.0, 25.0), Vector(-3.0, 10.0, 20.0))
+testest = collision3D(np.array([0, 24*math.cos(math.radians(60)), -24*math.sin(math.radians(60))]), 0.8, np.array([0,0,1]))
+print(str(testest[0]))
+print(str(np.linalg.norm(testest[0])))
+
+path_test = projectile_path(75, 0.5, np.array([5.0, 5.0, 10.0]), np.array([-10.0, 7.5, 40.0]))
 
 ob = bpy.data.objects["Sphere"]
 ob.animation_data_clear()
