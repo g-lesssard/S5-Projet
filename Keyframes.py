@@ -24,7 +24,7 @@ testest = collision3D(np.array([0, 24*math.cos(math.radians(60)), -24*math.sin(m
 print(str(testest[0]))
 print(str(np.linalg.norm(testest[0])))
 
-path_test = projectile_path(75, 0.5, np.array([5.0, 5.0, 10.0]), np.array([-10.0, 7.5, 40.0]))
+path_test = projectile_path(150, 0.5, np.array([5.0, 5.0, 10.0]), np.array([-10.0, 7.5, 40.0]))
 
 ob = bpy.data.objects["Sphere"]
 ob.animation_data_clear()
@@ -35,4 +35,4 @@ for position in path_test:
     bpy.context.scene.frame_set(frame_num)
     ob.location = position
     ob.keyframe_insert(data_path="location", index = -1)
-    frame_num += 5
+    frame_num += 2.5
