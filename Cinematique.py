@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import mathutils as mu
 
 def cinematique_position(current_time, init_p = 0.0, init_s = 0.0, init_a = -9.806):
     return init_p + init_s * current_time + 0.5 * init_a * current_time ** 2
@@ -9,13 +10,13 @@ def cinematique_speed(current_time, init_s = 0.0, init_a = -9.806):
 
 # Collision section, m in kg and v in m/s
 # initial masses are at 2 kg by default so 1/m1 + 1/m2 would be 1 by default
-def collision3D(speed1, e = 1.0, normale = np.array([0,0,1]), speed2 = np.array([0,0,0]), m1 = 2.0, m2 = 2.0):
+def collision3D(speed1, e = 1.0, normale = mu.Vector((0,0,1)), speed2 = mu.Vector((0,0,0)), m1 = 2.0, m2 = 2.0):
     p = (1 + e) * speed1.dot(normale) * (normale) / (1/m1 + 1/m2)
     return ((speed1 - p), (speed2 + p))
 
 # It's important to mention here that timestep aren't binded to keyframes. Logic of correct ratio for 
 # keyframes / timestep must be done outside the function.
-def projectile_path(iter_nb = 1, timestep = 1, init_p = np.array([0,0,0]), init_s = np.array([0,0,0]), init_a = np.array([0,0,-9.806])):
+def projectile_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s = mu.Vector((0,0,0)), init_a = mu.Vector((0,0,-9.806))):
     pos_path = []
     if iter_nb > 0.0:
         x = cinematique_position(timestep, init_p[0], init_s[0], init_a[0])
@@ -29,10 +30,10 @@ def projectile_path(iter_nb = 1, timestep = 1, init_p = np.array([0,0,0]), init_
         
         # hardcoded to collide with floor only here
         # for now there is an undesirable offset
-        if (z <= 5):
-            init_s = collision3D(init_s, 0.7)[0]
-        pos_path.append(new_pos)        
+        pos_path.append(new_pos) 
         iter_nb -= 1
+        if (z <= 0 ):
+            init_s = collision3D(init_s, 0.7)[0]                 
         for pos in projectile_path(iter_nb, timestep, new_pos, init_s):
             pos_path.append(pos)
     return pos_path
