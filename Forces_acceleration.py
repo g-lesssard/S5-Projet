@@ -56,26 +56,39 @@ def collision3D(speed1, e = 1.0, normale = mu.Vector((0,0,1)), speed2 = mu.Vecto
 def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s = mu.Vector((0,0,0)), sphere_center = mu.Vector((0,0,0))):
     pos_path = [] 
     normale = sphere_center - init_p
+    normale.normalize()
     previous_normale = normale
     while iter_nb > 0.0:
         normale = sphere_center - init_p
+        normale.normalize()
         marble_N_F = marble_normal_force(normale)            
         marble_G_F = gravity_force(MARBLE_MASS)        
         marble_T_F = total_force([marble_N_F, marble_G_F])
         marble_current_accel = marble_T_F / MARBLE_MASS                   
         
         # To change
-        normale_speed = init_s
+        ang = previous_normale.angle(normale)
+        axis = previous_normale.cross(normale)
+        mat = mu.Matrix.Rotation(ang, 3, axis)
         
-        init_p[0] = cinematique_position(timestep, init_p[0], normale_speed[0], marble_current_accel[0])
-        init_p[1] = cinematique_position(timestep, init_p[1], normale_speed[1], marble_current_accel[1])
-        init_p[2] = cinematique_position(timestep, init_p[2], normale_speed[2], marble_current_accel[2])     
+        init2 = mat @ previous_normale
+        
+        print("Prev: " + str(previous_normale))
+        print("Final: " + str(normale))
+        print("RotM: " + str(mat))
+        print("Result Final rotated: " + str(init2) + "\n")
+        
+        rotated_speed = mat @ init_s
+        
+        init_p[0] = cinematique_position(timestep, init_p[0], rotated_speed[0], marble_current_accel[0])
+        init_p[1] = cinematique_position(timestep, init_p[1], rotated_speed[1], marble_current_accel[1])
+        init_p[2] = cinematique_position(timestep, init_p[2], rotated_speed[2], marble_current_accel[2])     
         
         previous_normale = normale                       
                 
-        init_s[0] = cinematique_speed(timestep, normale_speed[0], marble_current_accel[0])
-        init_s[1] = cinematique_speed(timestep, normale_speed[1], marble_current_accel[1])
-        init_s[2] = cinematique_speed(timestep, normale_speed[2], marble_current_accel[2])                              
+        init_s[0] = cinematique_speed(timestep, rotated_speed[0], marble_current_accel[0])
+        init_s[1] = cinematique_speed(timestep, rotated_speed[1], marble_current_accel[1])
+        init_s[2] = cinematique_speed(timestep, rotated_speed[2], marble_current_accel[2])                              
                 
         pos_path.append(mu.Vector(init_p)) 
         iter_nb -= 1        
