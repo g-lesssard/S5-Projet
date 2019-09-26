@@ -19,7 +19,7 @@ ob_Sphere_location = bpy.data.objects["Sphere"].location
 ob_Marble = bpy.data.objects["Marble"]
 ob_Marble.animation_data_clear()
 
-marble_pos_path = marble_path(200, 0.005, mu.Vector((0,-0.16675525903701782,0.03)), mu.Vector((0,0,0)), ob_Sphere_location)
+marble_pos_path = marble_path(200, 0.005, mu.Vector((0.0, -0.166726216673851, 0.03979276120662689)), mu.Vector((0,0,0)), ob_Sphere_location)
 
 frame_num = 0
 
