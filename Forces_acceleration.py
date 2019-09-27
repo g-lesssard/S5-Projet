@@ -38,6 +38,24 @@ def total_force(force_list):
         t_force += force
     return t_force
 
+def drag_force_sphere(radius, velocity = mu.Vector()):
+    air_density = 1.225
+    drag_coeff_sphere = 0.47
+    cross_section_area = math.pi * (radius ** 2)
+    d_force = mu.Vector()
+    
+    d_force[0] = -1/2 * drag_coeff_sphere * air_density * cross_section_area * (velocity[0] ** 2)
+    d_force[1] = -1/2 * drag_coeff_sphere * air_density * cross_section_area * (velocity[1] ** 2)
+    d_force[2] = -1/2 * drag_coeff_sphere * air_density * cross_section_area * (velocity[2] ** 2)
+    return d_force
+
+def friction_force(coefficient, direction_v, normale_F):
+    direction_v_inv = mu.Vector(direction_v)
+    direction_v_inv.negate()
+    direction_v_inv.normalize()
+    # /10 comes from scaling done in blender. 3 cm in real life = 30 cm in blender for example
+    return direction_v_inv * normale_F.length * coefficient / 10
+
 ############ Cinematique
 def cinematique_position(current_time, init_p = 0.0, init_s = 0.0, init_a = -9.806):
     return init_p + init_s * current_time + 0.5 * init_a * current_time ** 2
@@ -56,35 +74,39 @@ def collision3D(speed1, e = 1.0, normale = mu.Vector((0,0,1)), speed2 = mu.Vecto
 def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s = mu.Vector((0,0,0)), sphere_center = mu.Vector((0,0,0))):
     pos_path = [] 
     normale = sphere_center - init_p
+    init_radius = normale.length
+    print("Radius: " + str(init_radius))
     normale.normalize()
-    previous_normale = normale
+    previous_normale = normale    
     while iter_nb > 0.0:
         normale = sphere_center - init_p
-        normale.normalize()
-        marble_N_F = marble_normal_force(normale)            
-        marble_G_F = gravity_force(MARBLE_MASS)        
-        marble_T_F = total_force([marble_N_F, marble_G_F])
-        marble_current_accel = marble_T_F / MARBLE_MASS                   
+        normale_normalized = normale
+        normale_normalized.normalize()
         
-        # To change
-        ang = previous_normale.angle(normale)
-        axis = previous_normale.cross(normale)
+        # Rotate speed
+        ang = previous_normale.angle(normale_normalized)
+        axis = previous_normale.cross(normale_normalized)
         mat = mu.Matrix.Rotation(ang, 3, axis)
-        
-        init2 = mat @ previous_normale
-        
-        print("Prev: " + str(previous_normale))
-        print("Final: " + str(normale))
-        print("RotM: " + str(mat))
-        print("Result Final rotated: " + str(init2) + "\n")
-        
+             
         rotated_speed = mat @ init_s
+        
+        marble_N_F = marble_normal_force(normale_normalized)            
+        marble_G_F = gravity_force(MARBLE_MASS)        
+        marble_D_F = drag_force_sphere(0.0075, init_s)
+        marble_F_F = friction_force(0.2, rotated_speed, marble_N_F)
+        print(str(marble_F_F))
+        marble_T_F = total_force([marble_N_F, marble_G_F, marble_D_F, marble_F_F])
+        marble_current_accel = marble_T_F / MARBLE_MASS                                   
         
         init_p[0] = cinematique_position(timestep, init_p[0], rotated_speed[0], marble_current_accel[0])
         init_p[1] = cinematique_position(timestep, init_p[1], rotated_speed[1], marble_current_accel[1])
         init_p[2] = cinematique_position(timestep, init_p[2], rotated_speed[2], marble_current_accel[2])     
         
-        previous_normale = normale                       
+        # Correct the new position to fit the good radius from sphere center to marble
+        temp_normale = sphere_center - init_p
+        init_p = sphere_center - ((init_radius / temp_normale.length) * temp_normale)
+        
+        previous_normale = normale_normalized                       
                 
         init_s[0] = cinematique_speed(timestep, rotated_speed[0], marble_current_accel[0])
         init_s[1] = cinematique_speed(timestep, rotated_speed[1], marble_current_accel[1])
