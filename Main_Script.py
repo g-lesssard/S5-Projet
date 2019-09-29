@@ -22,7 +22,7 @@ ob_Marble = bpy.data.objects["Marble"]
 ob_Marble_rotation = ob_Marble.rotation_euler
 ob_Marble.animation_data_clear()
 
-marble_pos_path, marble_rot_path = marble_path(5*612, 0.0025, mu.Vector((-0.09409496188163757, 0.1060512512922287, 0.10304122418165207)), mu.Vector((0.38,-0.123,0)), ob_Sphere_location, ob_Marble_rotation)
+marble_pos_path, marble_rot_path = marble_path(666, 0.01, mu.Vector((-0.09409496188163757, 0.1060512512922287, 0.10304122418165207)), mu.Vector((0.38,-0.123,0)), ob_Sphere_location, ob_Marble_rotation)
 
 frame_num = 0
 
@@ -30,7 +30,7 @@ for position in marble_pos_path:
     bpy.context.scene.frame_set(frame_num)
     ob_Marble.location = position
     ob_Marble.keyframe_insert(data_path="location", index = -1)
-    frame_num += 0.25  
+    frame_num += 1  
     
 frame_num = 0 
 ob_Marble.rotation_mode = 'QUATERNION'
@@ -38,4 +38,4 @@ for rotation in marble_rot_path:
     bpy.context.scene.frame_set(frame_num)
     ob_Marble.rotation_quaternion = rotation
     ob_Marble.keyframe_insert(data_path="rotation_quaternion", index = -1)
-    frame_num += 0.25 
+    frame_num += 1
