@@ -71,11 +71,11 @@ def collision3D(speed1, e = 1.0, normale = mu.Vector((0,0,1)), speed2 = mu.Vecto
 
 # It's important to mention here that timestep aren't binded to keyframes. Logic of correct ratio for 
 # keyframes / timestep must be done outside the function.
-def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s = mu.Vector((0,0,0)), sphere_center = mu.Vector((0,0,0))):
+def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s = mu.Vector((0,0,0)), sphere_center = mu.Vector((0,0,0)), init_rot = mu.Vector()):
     pos_path = [] 
+    rot_path = []     
     normale = sphere_center - init_p
     init_radius = normale.length
-    print("Radius: " + str(init_radius))
     normale.normalize()
     previous_normale = normale    
     while iter_nb > 0.0:
@@ -94,13 +94,23 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
         marble_G_F = gravity_force(MARBLE_MASS)        
         marble_D_F = drag_force_sphere(0.0075, init_s)
         marble_F_F = friction_force(0.2, rotated_speed, marble_N_F)
-        print(str(marble_F_F))
         marble_T_F = total_force([marble_N_F, marble_G_F, marble_D_F, marble_F_F])
         marble_current_accel = marble_T_F / MARBLE_MASS                                   
         
         init_p[0] = cinematique_position(timestep, init_p[0], rotated_speed[0], marble_current_accel[0])
         init_p[1] = cinematique_position(timestep, init_p[1], rotated_speed[1], marble_current_accel[1])
-        init_p[2] = cinematique_position(timestep, init_p[2], rotated_speed[2], marble_current_accel[2])     
+        init_p[2] = cinematique_position(timestep, init_p[2], rotated_speed[2], marble_current_accel[2])  
+        
+        # Rotation
+        rot_axis = normale_normalized.cross(rotated_speed)
+        rot_axis.normalize()
+        rotation = rotated_speed.length * 1.5 * timestep * 2 * math.pi               
+        
+        rotQ = mu.Quaternion(rot_axis, rotation)
+        init_rotQ = init_rot.to_quaternion()
+        new_rotQ = rotQ @ init_rotQ
+        init_rot = (new_rotQ).to_euler()         
+        rot_path.append(new_rotQ)
         
         # Correct the new position to fit the good radius from sphere center to marble
         temp_normale = sphere_center - init_p
@@ -112,6 +122,6 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
         init_s[1] = cinematique_speed(timestep, rotated_speed[1], marble_current_accel[1])
         init_s[2] = cinematique_speed(timestep, rotated_speed[2], marble_current_accel[2])                              
                 
-        pos_path.append(mu.Vector(init_p)) 
+        pos_path.append(mu.Vector(init_p))
         iter_nb -= 1        
-    return pos_path    
+    return pos_path, rot_path    
