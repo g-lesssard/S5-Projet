@@ -125,8 +125,8 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
             temp_normale = sphere_center - init_p
             init_p = sphere_center - ((init_radius / temp_normale.length) * temp_normale)
         elif (abs(init_p[0]) <= 0.275 and abs(init_p[1]) <= 0.275) or init_p[2] <= -0.225:
-            if init_p[2] <= -0.925:
-                init_p[2] = -0.925
+            if init_p[2] <= -0.225:
+                init_p[2] = -0.225
             rotated_speed[2] = 0.0
         
         previous_normale = normale_normalized                       
