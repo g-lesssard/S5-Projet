@@ -71,7 +71,7 @@ def collision3D(speed1, e = 1.0, normale = mu.Vector((0,0,1)), speed2 = mu.Vecto
 
 # It's important to mention here that timestep aren't binded to keyframes. Logic of correct ratio for 
 # keyframes / timestep must be done outside the function.
-def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s = mu.Vector((0,0,0)), sphere_center = mu.Vector((0,0,0)), init_rot = mu.Vector()):
+def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s = mu.Vector((0,0,0)), sphere_center = mu.Vector((0,0,0)), init_rotQ = mu.Quaternion()):
     pos_path = [] 
     rot_path = []     
     normale = sphere_center - init_p
@@ -112,13 +112,12 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
         # Rotation
         rot_axis = normale_normalized.cross(rotated_speed) if normale_normalized.length > 0.0 else rot_axis
         rot_axis.normalize()
-        rotation = rotated_speed.length * 1.5 * timestep * 2 * math.pi               
+        rotation = rotated_speed.length * 1.5 * timestep * 2 * math.pi   
         
         rotQ = mu.Quaternion(rot_axis, rotation)
-        init_rotQ = init_rot.to_quaternion()
-        new_rotQ = rotQ @ init_rotQ
-        init_rot = (new_rotQ).to_euler()         
-        rot_path.append(new_rotQ)
+        new_rotQ = rotQ @ init_rotQ        
+        rot_path.append(init_rotQ)
+        init_rotQ = new_rotQ
         
         # Correct the new position to fit the good radius from sphere center to marble
         if (math.sqrt(init_p[0]**2 + init_p[1]**2) <= 0.177):
