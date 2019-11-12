@@ -1,7 +1,7 @@
-USER=$1
-IP_ADDR=$2
+USER=projet
+IP_ADDR=192.168.0.10
 
 echo "sending files to $IP_ADDR as $USER"
 
-rsync -v -e ssh CarControl/* $USER@$IP_ADDR:~/raspi/CarControl/
+rsync -v -e ssh CarControl/* $USER@$IP_ADDR:~/projet/CarControl/
 
