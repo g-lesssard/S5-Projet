@@ -2,3 +2,5 @@
 CarControl/.idea/
 
 CarControl/__pycache__/
+
+*.pyc
