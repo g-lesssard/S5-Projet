@@ -11,12 +11,15 @@
 **********************************************************************
 '''
 import time
-import RPi.GPIO as GPIO
+try:
+	import RPi.GPIO as GPIO
+except ImportError:
+	print("Not running on RaspberryPi...")
 
 class Ultrasonic_Avoidance(object):
 	timeout = 0.05
 
-	def __init__(self, channel):
+	def __init__(self, channel=17):
 		self.channel = channel
 		GPIO.setmode(GPIO.BCM)
 
