@@ -19,7 +19,7 @@ except ImportError:
 class Ultrasonic_Avoidance(object):
 	timeout = 0.05
 
-	def __init__(self, channel=17):
+	def __init__(self, channel=20):
 		self.channel = channel
 		GPIO.setmode(GPIO.BCM)
 
@@ -80,7 +80,7 @@ class Ultrasonic_Avoidance(object):
 		return status
 
 def test():
-	UA = Ultrasonic_Avoidance(17)
+	UA = Ultrasonic_Avoidance(20)
 	threshold = 10
 	while True:
 		distance = UA.get_distance()

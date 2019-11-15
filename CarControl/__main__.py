@@ -1,21 +1,22 @@
-from Sensors import Radar
+from Sensors import Radar, Line_Follower
 from StateMachine import StateController
 import time
+
 
 
 ########################################################################################################################
 
 
 if __name__ == "__main__":
-    rad = Radar()
-    master = StateController()
-    rad.startReading()
-
-    rad.addObserver(master.objectDetected)
-
+    
+    master = StateController(printing=True)
+    master.startReadingThreads()
+    #master.calibrate()
+    
     while True:
         try:
-            time.sleep(0.1)
+            master.run()
         except KeyboardInterrupt:
-            rad.stopReading()
+            master.radar.stopReading()
+            master.lf.stopReading()
             exit()

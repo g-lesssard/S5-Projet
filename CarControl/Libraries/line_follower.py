@@ -10,8 +10,8 @@
 * Update      : Dream    2016-09-21    New release
 **********************************************************************
 '''
-
-from SunFounder_Line_Follower import Line_Follower
+from Libraries.SunFounder_Line_Follower import Line_Follower
+#from SunFounder_Line_Follower import Line_Follower
 from picar import front_wheels
 from picar import back_wheels
 import time
@@ -19,16 +19,16 @@ import picar
 
 picar.setup()
 
-REFERENCES = [200, 200, 200, 200, 200]
+REFERENCES = [20, 20, 20, 20, 20]
 #calibrate = True
 calibrate = False
-forward_speed = 80
-backward_speed = 70
+forward_speed = 60
+backward_speed = 30
 turning_angle = 40
 
 max_off_track_count = 40
 
-delay = 0.0005
+delay = 0.0001
 
 fw = front_wheels.Front_Wheels(db='config')
 bw = back_wheels.Back_Wheels(db='config')
@@ -60,8 +60,10 @@ def main():
 	d_step = 45
 	bw.forward()
 	while True:
+		print(lf.read_analog())
 		lt_status_now = lf.read_digital()
 		print(lt_status_now)
+		print()
 		# Angle calculate
 		if	lt_status_now == [0,0,1,0,0]:
 			step = 0	
@@ -152,6 +154,7 @@ def destroy():
 	fw.turn(90)
 
 if __name__ == '__main__':
+	cali()
 	try:
 		try:
 			while True:

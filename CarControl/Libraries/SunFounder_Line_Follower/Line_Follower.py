@@ -45,7 +45,7 @@ class Line_Follower(object):
 		for i in range(0, 5):
 			if lt[i] > self._references[i]:
 				digital_list.append(0)
-			elif lt[i] < self._references[i]:
+			elif lt[i] <= self._references[i]:
 				digital_list.append(1)
 			else:
 				digital_list.append(-1)
