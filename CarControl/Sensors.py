@@ -1,4 +1,4 @@
-from StateMachine import Event
+from StateMachine import *
 import threading
 import time
 from Libraries.SunFounder_Ultrasonic_Avoidance.Ultrasonic_Avoidance import Ultrasonic_Avoidance, GPIO
@@ -9,17 +9,18 @@ RADAR_CHANNEL = 20
 THRESHOLD_DISTANCE = 12
 ########################################################################################################################
 
-class Radar(Ultrasonic_Avoidance):
+class Radar(object):
 
     def __init__(self, printing=False):
-        self.channel=RADAR_CHANNEL
+        self.UA = Ultrasonic_Avoidance(channel=RADAR_CHANNEL)
         self.onObjectDetected = Event()
         self.reading_thread = None
         self.filtered_distance = 0
         self.printing = printing
-        self.mutex = threading.Lock()
+        #self.mutex = threading.Lock()
         self.running = False
-        GPIO.setmode(GPIO.BCM)
+        time.sleep(0.5)
+
 
     def addObserver(self, observer_method):
         self.onObjectDetected += observer_method
@@ -30,23 +31,26 @@ class Radar(Ultrasonic_Avoidance):
     def detectObject(self):
         while self.running:
             #self.mutex.acquire()
-            self.filtered_distance = int(0.70*self.distance() + 0.30*self.filtered_distance)
+            self.filtered_distance = self.UA.get_distance()
             if self.printing:
                 print("Object at {}".format(self.filtered_distance))
             if self.filtered_distance < THRESHOLD_DISTANCE and self.filtered_distance != -1:
                 self.onObjectDetected()
-            time.sleep(0.1)
+            time.sleep(0.3)
             #self.mutex.release()
         return
 
+
     def startReading(self):
         self.reading_thread = threading.Thread(target=self.detectObject)
+        print("Radar Thread Started")
         self.running = True
         self.reading_thread.start()
         
 
     def stopReading(self):
         self.running = False
+        print("Radar Thread Stopped")
 
     def getData(self):
         return self.filtered_distance
@@ -63,6 +67,8 @@ class Line_Follower():
         self.mutex = threading.Lock()
         self.printing = printing
         self.running = False
+        # Very important sleep to cra
+        time.sleep(0.5)
 
     def calibrate(self):
         lf.cali()
@@ -82,6 +88,8 @@ class Line_Follower():
 
     def startReading(self):
         self.reading_thread = threading.Thread(target=self.detectLine)
+        if self.printing:
+            print("Thread started")
         self.running = True
         self.reading_thread.start()
         
@@ -95,3 +103,20 @@ class Line_Follower():
 
 ########################################################################################################################    
 
+if __name__ == "__main__":
+
+    rad = Radar(printing=True)
+    try:
+        rad.startReading()
+        time.sleep(10)
+        rad.stopReading()
+    except KeyboardInterrupt:
+        rad.stopReading()
+
+    line = Line_Follower(printing=True)
+    try:
+        line.startReading()
+        time.sleep(10)
+        line.stopReading()
+    except KeyboardInterrupt:
+        line.stopReading()

@@ -1,7 +1,8 @@
 from Libraries import line_follower
 import Libraries.SunFounder_Line_Follower
 import Sensors
-import DirectionControl
+from DirectionControl import DirectionControl
+import picar
 ########################################################################################################################
 
 # States
@@ -39,13 +40,13 @@ class StateController(object):
     def __init__(self, printing=False):
         self.state = BASE_LINE_FOLLOWER
         self.radar = Sensors.Radar(printing=printing)
-        self.lf = Sensors.Line_Follower(printing=printing)
-        #self.dir_control = DirectionControl.DirectionControl()
+        self.line_follower = Sensors.Line_Follower(printing=printing)
+        self.dir_control = DirectionControl()
 
     def startReadingThreads(self):
         self.radar.startReading()
         self.radar.addObserver(self.objectDetected)
-        #self.lf.startReading()
+        self.line_follower.startReading()
         
 
     def objectDetected(self):
@@ -53,10 +54,16 @@ class StateController(object):
         # call method to modify direction
 
     def calibrate(self):
-        self.lf.calibrate()
+        self.line_follower.calibrate()
+        self.dir_control.start()
 
     def run(self):
-        pass
+        self.dir_control.setSpeed(20)
+
+    def stop(self):
+        self.radar.stopReading()
+        self.line_follower.stopReading()
+        self.dir_control.stop()
 
 
 

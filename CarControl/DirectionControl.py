@@ -13,9 +13,10 @@ class DirectionControl(object):
         self.bw.speed = 0
         self.moving_thread = None
         self.mutex = threading.Lock()
+        self.running = False
 
     def setSpeed(self,target_speed):
-        self.mutex.acquire()
+        #self.mutex.acquire()
         if target_speed > self.bw.speed:
             while self.bw.speed < target_speed:
                 self.bw.speed += 10
@@ -24,14 +25,15 @@ class DirectionControl(object):
             while self.bw.speed < target_speed:
                 self.bw.speed -= 10
                 time.sleep(0.1)
-        self.mutex.release()
+        #self.mutex.release()
 
     def moveCar(self):
-        while True:
+        while self.running:
             if self.bw.speed < 0:
                 self.bw.backward()
             elif self.bw.speed > 0:
                 self.bw.forward()
+        return
     
     def turnRight(self,angle):
         if angle > 45:
@@ -47,8 +49,9 @@ class DirectionControl(object):
 
     def start(self):
         self.moving_thread = threading.Thread(target=self.moveCar)
+        self.running = True
         self.moving_thread.start()
 
-    def kill(self):
-        self.moving_thread._stop()
+    def stop(self):
+        self.running = False
 
