@@ -29,7 +29,7 @@ class DirectionControl(object):
             return
         else:
             db.set('turning_offset', new_offset)
-            self.fw= front_wheels.Front_Wheels(db='config')
+            self.fw= front_wheels.Front_Wheels(db=config_file)
             self.setTurningOffset()
 
     def setSpeed(self, target_speed, hard_set=False):
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     time.sleep(1)
     DC.setSpeed(-100)
     time.sleep(1)
-    DC.setSpeed(0, hard_set=True)
+    DC.setSpeed(0)
 
     angles = [10, 20, 25, 30, 45]
     DC.turnLeft(0)
