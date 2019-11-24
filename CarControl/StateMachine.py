@@ -41,7 +41,7 @@ class StateController(object):
         self.state = BASE_LINE_FOLLOWER
         self.radar = Sensors.Radar(printing=printing)
         self.line_follower = Sensors.Line_Follower(printing=printing)
-        self.dir_control = DirectionControl()
+        self.dir_control = DirectionControl(printing=printing)
 
     def startReadingThreads(self):
         self.radar.startReading()
@@ -55,10 +55,9 @@ class StateController(object):
 
     def calibrate(self):
         self.line_follower.calibrate()
-        self.dir_control.start()
 
     def run(self):
-        self.dir_control.setSpeed(20)
+        self.dir_control.setSpeed(60)
 
     def stop(self):
         self.radar.stopReading()

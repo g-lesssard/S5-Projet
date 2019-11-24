@@ -17,7 +17,6 @@ class Radar(object):
         self.reading_thread = None
         self.filtered_distance = 0
         self.printing = printing
-        #self.mutex = threading.Lock()
         self.running = False
         time.sleep(0.5)
 

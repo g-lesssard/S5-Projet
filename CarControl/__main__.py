@@ -9,7 +9,7 @@ import time
 
 if __name__ == "__main__":
     
-    master = StateController(printing=False)
+    master = StateController(printing=True)
     master.calibrate()
     master.startReadingThreads()
     
