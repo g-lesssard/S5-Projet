@@ -49,10 +49,10 @@ class DirectionControl(object):
             return self.speed
         else:
             while self.speed != target_speed:
-                if target_speed >= 0:
+                if target_speed >= self.speed:
                     self.speed += step
                     time.sleep(timeout)
-                elif target_speed < 0:
+                elif target_speed < self.speed:
                     self.speed -= step
                     time.sleep(timeout)
 
