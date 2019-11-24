@@ -1,21 +1,36 @@
 from picar import front_wheels
 from picar import back_wheels
+from picar import filedb
 import time
 import picar
 import threading
 
+config_file = '/home/projet/CarControl/config'
 
 class DirectionControl(object):
 
     def __init__(self, printing=False):
-        self.fw = front_wheels.Front_Wheels(db='confign')
-        self.bw = back_wheels.Back_Wheels(db='confign')
+        self.fw = front_wheels.Front_Wheels(db=config_file)
+        self.bw = back_wheels.Back_Wheels(db=config_file)
         self.printing = printing
         self.speed = 0
         self.moving_thread = None
         self.mutex = threading.Lock()
         self.running = False
         time.sleep(0.3)
+
+    def setTurningOffset(self):
+        self.turn(0)
+        db = filedb.fileDB(db=config_file)
+        offset = int(db.get('turning_offset'))
+        print('Current offset is: {}'.format(offset))
+        new_offset = int(input("Enter new offset to set new offset or same offset to exit: "))
+        if new_offset == offset:
+            return
+        else:
+            db.set('turning_offset', new_offset)
+            self.fw= front_wheels.Front_Wheels(db='config')
+            self.setTurningOffset()
 
     def setSpeed(self, target_speed, hard_set=False):
         target_speed = int(target_speed)
@@ -52,6 +67,28 @@ class DirectionControl(object):
                     self.bw.speed = abs(self.speed)
         return self.speed
 
+    def turn(self, angle):
+        if angle >=0:
+            if print:
+                print("turning right at {} degrees".format(angle))
+            self.turnRight(angle)
+        elif angle < 0:
+            if print:
+                print("turning left at {} degrees".format(angle))
+            self.turnLeft(abs(angle))
+
+    def turnRight(self,angle): 
+        if angle > 45: 
+            print("Cannot turn at such a big angle...") 
+        else: 
+            self.fw.turn(90 + angle) 
+ 
+    def turnLeft(self,angle): 
+        if angle > 45: 
+            print("Cannot turn at such a big angle...") 
+        else: 
+            self.fw.turn(90 - angle) 
+
 
     def stop(self):
         self.running = False
@@ -60,20 +97,26 @@ class DirectionControl(object):
 
 if __name__ == "__main__":
     
-    #bw = back_wheels.Back_Wheels(db='config')
-    #bw.forward()
-    #bw.speed = 10
-    #time.sleep(1)
-    #bw.speed = 0
-    #bw.forward()
-    #time.sleep(1)
 
     DC = DirectionControl(printing=True)
     time.sleep(1)
     DC.setSpeed(100)
     time.sleep(1)
-    DC.setSpeed(100)
+    DC.setSpeed(-100)
     time.sleep(1)
     DC.setSpeed(0, hard_set=True)
+
+    angles = [10, 20, 25, 30, 45]
+    DC.turnLeft(0)
+    DC.setTurningOffset()
+    for angle in angles:
+        DC.turnRight(angle)
+        time.sleep(0.5)
+        DC.turnLeft(0)
+        time.sleep(0.5)
+        DC.turnLeft(angle)
+        time.sleep(0.5)
+        DC.turnLeft(0)
+    
     
     
