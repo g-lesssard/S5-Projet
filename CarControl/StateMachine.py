@@ -4,6 +4,7 @@ import Sensors
 from DirectionControl import DirectionControl
 import picar
 from enum import Enum, auto
+import time
 ########################################################################################################################
 
 # States
@@ -42,7 +43,7 @@ class Event(object):
 class StateController(object):
 
     def __init__(self, printing=False):
-        self.state = State.BASE_LINE_FOLLOWER
+        self.state = State.TEST
         self.radar = Sensors.Radar(printing=False)
         self.line_follower = Sensors.Line_Follower(printing=False)
         self.dir_control = DirectionControl(printing=printing)
@@ -54,8 +55,9 @@ class StateController(object):
         
 
     def objectDetected(self):
-        #self.state = State.AVOID_OBSTACLE
-        pass
+        print("Obstacle detected, setting avoidance course...")
+        self.state = State.AVOID_OBSTACLE
+
         
 
     def calibrate(self):
@@ -66,12 +68,11 @@ class StateController(object):
 
     def run(self):
         if self.state is State.TEST:
-            print('Test state not implemented')
+            self.dir_control.setSpeed(20)
         if self.state is State.BASE_LINE_FOLLOWER:
-            print('Following line')
             self.follow_line()
-        if self.state == State.AVOID_OBSTACLE:
-            pass
+        if self.state is State.AVOID_OBSTACLE:
+            self.avoidObstacle()            
 
     def stop(self):
         self.radar.stopReading()
@@ -104,6 +105,15 @@ class StateController(object):
         else:
             angle = 45
         self.dir_control.turn(angle)
+
+    def avoidObstacle(self):
+        time.sleep(0.1)
+        self.dir_control.setSpeed(0)
+        time.sleep(2)
+        print("Obstacle avoided, going back to line following")
+        self.state = State.BASE_LINE_FOLLOWER
+
+
         
 ########################################################################################################################
 
