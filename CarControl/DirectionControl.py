@@ -66,18 +66,26 @@ class DirectionControl(object):
 
     def turn(self, angle):
         if angle >=0:
-            if print:
+            if self.printing:
                 print("turning right at {} degrees".format(angle))
             self.turnRight(angle)
             if angle == 45:
                 self.setWheels(wheel='right', speed=0)
             else:
                 self.setWheels(wheel='right', speed=self.speed)
+            if angle == 40:
+                self.setWheels(wheel='right', speed=30)
+            else:
+                self.setWheels(wheel='right', speed=self.speed)
         elif angle < 0:
-            if print:
+            if self.printing:
                 print("turning left at {} degrees".format(angle))
             self.turnLeft(abs(angle))
             if angle == -45:
+                self.setWheels(wheel='left', speed=0)
+            else:
+                self.setWheels(wheel='left', speed=self.speed)
+            if angle == -40:
                 self.setWheels(wheel='left', speed=0)
             else:
                 self.setWheels(wheel='left', speed=self.speed)
