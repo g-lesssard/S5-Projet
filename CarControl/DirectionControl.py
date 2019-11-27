@@ -14,6 +14,7 @@ class DirectionControl(object):
         self.bw = back_wheels.Back_Wheels(db=config_file)
         self.printing = printing
         self.speed = 0
+        self.bw.forward()
         self.moving_thread = None
         self.mutex = threading.Lock()
         self.running = False
@@ -41,11 +42,9 @@ class DirectionControl(object):
             if self.printing:
                 print(self.speed)
             if self.speed >= 0:
-                self.bw.forward()
-                self.bw.speed = abs(self.speed)
+                self.setWheels(speed=self.speed)
             else:
-                self.bw.backward()
-                self.bw.speed = abs(self.speed)
+                self.setWheels(speed=self.speed)
             return self.speed
         else:
             while self.speed != target_speed:
@@ -60,11 +59,9 @@ class DirectionControl(object):
                     print(self.speed)
 
                 if self.speed >= 0:
-                    self.bw.backward()
-                    self.bw.speed = abs(self.speed)
+                    self.setWheels(speed=self.speed)
                 else:
-                    self.bw.forward()
-                    self.bw.speed = abs(self.speed)
+                    self.setWheels(speed=self.speed)
         return self.speed
 
     def turn(self, angle):
@@ -72,10 +69,18 @@ class DirectionControl(object):
             if print:
                 print("turning right at {} degrees".format(angle))
             self.turnRight(angle)
+            if angle == 45:
+                self.setWheels(wheel='right', speed=0)
+            else:
+                self.setWheels(wheel='right', speed=self.speed)
         elif angle < 0:
             if print:
                 print("turning left at {} degrees".format(angle))
             self.turnLeft(abs(angle))
+            if angle == -45:
+                self.setWheels(wheel='left', speed=0)
+            else:
+                self.setWheels(wheel='left', speed=self.speed)
 
     def turnRight(self,angle): 
         if angle > 45: 
@@ -94,11 +99,40 @@ class DirectionControl(object):
         self.running = False
         self.setSpeed(0, hard_set=True)
 
+    def setWheels(self, wheel = 'both', speed = 0):
+        if wheel is 'left':
+            self.bw.right_wheel.speed = abs(speed)
+            if speed < 0:
+                self.bw.right_wheel.backward()
+            else:
+                self.bw.right_wheel.forward()
+        elif wheel is 'right':
+            self.bw.left_wheel.speed = abs(speed)
+            if speed < 0:
+                self.bw.left_wheel.backward()
+            else:
+                self.bw.left_wheel.forward()
+        elif wheel is 'both':
+            self.bw.right_wheel.speed = abs(speed)
+            self.bw.left_wheel.speed = abs(speed)
+            if speed < 0:
+                self.bw.left_wheel.backward()
+                self.bw.right_wheel.backward()
+            else:
+                self.bw.left_wheel.forward()
+                self.bw.right_wheel.forward()
+
+        
+        
+
 
 if __name__ == "__main__":
-    
 
     DC = DirectionControl(printing=True)
+    DC.setWheels(speed=100)
+    time.sleep(2)
+    DC.setWheels(speed=0)
+
     time.sleep(1)
     DC.setSpeed(100)
     time.sleep(1)
