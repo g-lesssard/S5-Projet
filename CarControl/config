@@ -2,10 +2,10 @@
 
 turning_offset = 30
 
-forward_A = 1
+forward_A = 0
 
-forward_B = 1
+forward_B = 0
 
-backward_A = 0
+backward_A = 1
 
-backward_B = 0
+backward_B = 1
