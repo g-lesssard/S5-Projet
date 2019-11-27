@@ -54,13 +54,13 @@ def friction_force(coefficient, direction_v, normale_F):
     direction_v_inv.negate()
     direction_v_inv.normalize()
     # /10 comes from scaling done in blender. 3 cm in real life = 30 cm in blender for example
-    return direction_v_inv * normale_F.length * coefficient / 10
+    return direction_v_inv * normale_F.length * coefficient
 
 ############ Cinematique
-def cinematique_position(current_time, init_p = 0.0, init_s = 0.0, init_a = -9.806):
+def cinematique_position(current_time, init_p = 0.0, init_s = 0.0, init_a = -GRAVITY):
     return init_p + init_s * current_time + 0.5 * init_a * current_time ** 2
     
-def cinematique_speed(current_time, init_s = 0.0, init_a = -9.806):
+def cinematique_speed(current_time, init_s = 0.0, init_a = -GRAVITY):
     return init_s + init_a * current_time
 
 # Collision section, m in kg and v in m/s
@@ -80,9 +80,9 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
     previous_normale = normale   
     rot_axis = mu.Vector() 
     while iter_nb > 0.0:
-        if math.sqrt(init_p[0]**2 + init_p[1]**2) <= 17.7:
+        if math.sqrt(init_p[0]**2 + init_p[1]**2) <= 0.177:
             normale = sphere_center - init_p
-        elif (abs(init_p[0]) <= 27.5 and abs(init_p[1]) <= 27.5) or init_p[2] <= -22.5:
+        elif (abs(init_p[0]) <= 0.275 and abs(init_p[1]) <= 0.275) or init_p[2] <= -0.225:
             normale = mu.Vector((0.0, 0.0, 1.0))
             previous_normale = normale            
         else:
@@ -98,12 +98,14 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
         rotated_speed = mat @ init_s if normale_normalized.length > 0.0 else init_s
         
         marble_N_F = marble_normal_force(normale_normalized) if normale_normalized.length > 0.0 else mu.Vector()            
-        marble_G_F = gravity_force(MARBLE_MASS)       
-        marble_D_F = drag_force_sphere(7.5, init_s) if normale_normalized.length > 0.0 else mu.Vector()    
-        marble_F_F = friction_force(0.2, rotated_speed, marble_N_F) if normale_normalized.length > 0.0 else mu.Vector()
+        marble_G_F = gravity_force(MARBLE_MASS)               
+        marble_D_F = drag_force_sphere(0.075, init_s) if normale_normalized.length > 0.0 else mu.Vector()    
+        #marble_D_F = mu.Vector()
+        marble_F_F = friction_force(0.2, rotated_speed, marble_N_F) if normale_normalized.length > 0.0 else mu.Vector()        
+        #marble_F_F = mu.Vector()
         marble_T_F = total_force([marble_N_F, marble_G_F, marble_D_F, marble_F_F])
         marble_current_accel = marble_T_F / MARBLE_MASS  
-        print(marble_current_accel)                                 
+        #print(marble_current_accel)                                 
         
         init_p[0] = cinematique_position(timestep, init_p[0], rotated_speed[0], marble_current_accel[0])
         init_p[1] = cinematique_position(timestep, init_p[1], rotated_speed[1], marble_current_accel[1])
@@ -112,7 +114,7 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
         # Rotation
         rot_axis = normale_normalized.cross(rotated_speed) if normale_normalized.length > 0.0 else rot_axis
         rot_axis.normalize()
-        rotation = rotated_speed.length * 1.5 * timestep * 2 * math.pi               
+        rotation = rotated_speed.length * 0.015 * timestep * 2 * math.pi               
         
         rotQ = mu.Quaternion(rot_axis, rotation)
         init_rotQ = init_rot.to_quaternion()
@@ -123,6 +125,7 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
         # Correct the new position to fit the good radius from sphere center to marble
         if (math.sqrt(init_p[0]**2 + init_p[1]**2) <= 0.177):
             temp_normale = sphere_center - init_p
+            print(str(temp_normale))
             init_p = sphere_center - ((init_radius / temp_normale.length) * temp_normale)
         elif (abs(init_p[0]) <= 0.275 and abs(init_p[1]) <= 0.275) or init_p[2] <= -0.225:
             if init_p[2] <= -0.225:
@@ -133,7 +136,7 @@ def marble_path(iter_nb = 1, timestep = 1, init_p = mu.Vector((0,0,0)), init_s =
                 
         init_s[0] = cinematique_speed(timestep, rotated_speed[0], marble_current_accel[0])
         init_s[1] = cinematique_speed(timestep, rotated_speed[1], marble_current_accel[1])
-        init_s[2] = cinematique_speed(timestep, rotated_speed[2], marble_current_accel[2])                        
+        init_s[2] = cinematique_speed(timestep, rotated_speed[2], marble_current_accel[2])                  
                 
         pos_path.append(mu.Vector(init_p))
         iter_nb -= 1        
