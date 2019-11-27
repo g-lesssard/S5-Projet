@@ -46,8 +46,8 @@ class StateController(object):
     def __init__(self, printing=False):
         self.state = State.BASE_LINE_FOLLOWER
         self.radar = Sensors.Radar(printing=False)
-        self.line_follower = Sensors.Line_Follower(printing=False)
-        self.dir_control = DirectionControl(printing=printing)
+        self.line_follower = Sensors.Line_Follower(printing=True)
+        self.dir_control = DirectionControl(printing=False)
         self.angle = 0
 
     def startReadingThreads(self):
@@ -92,13 +92,12 @@ class StateController(object):
     def follow_line(self):
         self.dir_control.setSpeed(60)
         refs = self.line_follower.getData()
-        print(refs)
         if refs == [0,0,1,0,0]:
             self.angle = -0
         elif refs == [0,0,0,0,1]:
             self.angle = 45
         elif refs == [0,0,0,1,1]:
-            self.angle = 35
+            self.angle = 40
         elif refs == [0,0,0,1,0]:
             self.angle = 20
         elif refs == [0,0,1,1,0]:
@@ -106,7 +105,7 @@ class StateController(object):
         elif refs == [1,0,0,0,0]:
             self.angle = -45
         elif refs == [1,1,0,0,0]:
-            self.angle = -35
+            self.angle = -40
         elif refs == [0,1,0,0,0]:
             self.angle = -20
         elif refs == [0,1,1,0,0]:
@@ -124,9 +123,9 @@ class StateController(object):
 
     def savePietons(self):
         self.dir_control.setSpeed(30)
-        time.sleep(2)
+        time.sleep(2.69)
         self.dir_control.setSpeed(0)
-        time.sleep(1)
+        time.sleep(2)
         self.state = State.BASE_LINE_FOLLOWER
 
 

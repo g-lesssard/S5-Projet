@@ -1,4 +1,4 @@
-from StateMachine import *
+from StateMachine import Event
 import threading
 import time
 from Libraries.SunFounder_Ultrasonic_Avoidance.Ultrasonic_Avoidance import Ultrasonic_Avoidance, GPIO
@@ -64,9 +64,9 @@ class Line_Follower():
         self.data= [0,0,0,0,0]
         self.reading_thread = None
         self.mutex = threading.Lock()
+        self.pietons = Event()
         self.printing = printing
         self.running = False
-        # Very important sleep to cra
         time.sleep(0.5)
 
     def calibrate(self):
@@ -75,13 +75,36 @@ class Line_Follower():
     def setPrinting(self, printing):
         self.printing = True
 
+    def addObserver(self, observer_method):
+        self.pietons += observer_method
+
+    def removeObserver(self, observer_method):
+        self.pietons -= observer_method
+
     def detectLine(self):
+        count = 0
         while self.running:
             self.mutex.acquire()
-            self.data = lf.lf.read_digital()
-            time.sleep(0.1)
+
+            data = lf.lf.read_digital()
+            #if self.printing:
+            #    print("New data is: {0}, and old data is: {1}".format(data, self.data))
+            if (self.data == [0,0,1,0,0] or self.data == [0,1,1,0,0] or self.data == [0,0,1,1,0]) and data == [0,0,0,0,0]:
+                count += 1
+
+            self.data = data
+            if count != 0 and (self.data == [0,0,1,0,0] or self.data == [0,1,1,0,0] or self.data == [0,0,1,1,0] or self.data == [0,0,0,0,0]):
+                count += 1
+            else:
+                count = 0
+            if count == 10:
+                self.pietons()
+                count = 0
+
             if self.printing:
-                print(self.data)
+                print("Linefollower data: {0}, count: {1}".format(self.data, count))
+            
+            time.sleep(0.05)
             self.mutex.release()
         return
 

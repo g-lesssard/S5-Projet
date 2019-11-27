@@ -1,4 +1,4 @@
-from Sensors import Radar, Line_Follower, Ultrasonic_Avoidance
+from Sensors import Radar, Line_Follower
 from StateMachine import StateController
 import time
 
