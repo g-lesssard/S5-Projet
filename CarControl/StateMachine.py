@@ -54,7 +54,7 @@ class StateController(object):
         self.radar.startReading()
         self.radar.addObserver(self.objectDetected)
         self.line_follower.startReading()
-        self.line_follower.addObserver(self.pietonsDetected)
+        self.line_follower.addObserver(observer_method=self.pietonsDetected, event='pietons')
         
 
     def objectDetected(self):

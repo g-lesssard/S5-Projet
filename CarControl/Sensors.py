@@ -61,12 +61,20 @@ class Line_Follower():
 
     def __init__(self, printing=False):
         self.goingOffTrack = Event()
+
         self.data= [0,0,0,0,0]
+        self.previous_data = [0,0,0,0,0]
         self.reading_thread = None
         self.mutex = threading.Lock()
+
         self.pietons = Event()
+        self.sharp_turn = Event()
+        self.stop_zone = Event()
         self.printing = printing
         self.running = False
+
+        self.pietons_count = 0
+        self.stop_zone_count = 0
         time.sleep(0.5)
 
     def calibrate(self):
@@ -75,31 +83,33 @@ class Line_Follower():
     def setPrinting(self, printing):
         self.printing = True
 
-    def addObserver(self, observer_method):
-        self.pietons += observer_method
+    def addObserver(self, observer_method, event):
+        if event == 'pietons':
+            self.pietons += observer_method
+        elif event == 'sharp_turn':
+            self.sharp_turn += observer_method
+        elif event == 'stop_zone':
+            self.stop_zone += observer_method
 
-    def removeObserver(self, observer_method):
-        self.pietons -= observer_method
+
+    def removeObserver(self, observer_method, event):
+        if event == 'pietons':
+            self.pietons -= observer_method
+        elif event == 'sharp_turn':
+            self.sharp_turn -= observer_method
+        elif event == 'stop_zone':
+            self.stop_zone -= observer_method
 
     def detectLine(self):
         count = 0
         while self.running:
             self.mutex.acquire()
-
-            data = lf.lf.read_digital()
+            self.previous_data = self.data
+            self.data = lf.lf.read_digital()
+            self.lookForEvents()
             #if self.printing:
             #    print("New data is: {0}, and old data is: {1}".format(data, self.data))
-            if (self.data == [0,0,1,0,0] or self.data == [0,1,1,0,0] or self.data == [0,0,1,1,0]) and data == [0,0,0,0,0]:
-                count += 1
-
-            self.data = data
-            if count != 0 and (self.data == [0,0,1,0,0] or self.data == [0,1,1,0,0] or self.data == [0,0,1,1,0] or self.data == [0,0,0,0,0]):
-                count += 1
-            else:
-                count = 0
-            if count == 10:
-                self.pietons()
-                count = 0
+            
 
             if self.printing:
                 print("Linefollower data: {0}, count: {1}".format(self.data, count))
@@ -121,6 +131,36 @@ class Line_Follower():
 
     def getData(self):
         return self.data
+
+    def lookForEvents(self):
+        self.lookForPietons()
+        self.lookForSharpTurn()
+        self.lookForStopZone()
+
+    def lookForPietons(self):
+        if (self.previous_data == [0,0,1,0,0] or self.previous_data == [0,1,1,0,0] or self.previous_data == [0,0,1,1,0]) and self.data == [0,0,0,0,0]:
+            self.pietons_count += 1
+        if self.pietons_count != 0 and (self.data == [0,0,0,0,0]):
+            self.pietons_count += 1
+        else:
+            self.pietons_count = 0
+        if self.pietons_count == 10:
+            self.pietons()
+            self.pietons_count = 0
+    
+    def lookForSharpTurn(self):
+        if self.data == [0,0,1,1,1]:
+            self.sharp_turn()
+
+    def lookForStopZone(self):
+        if self.data == [1,1,1,1,1]:
+            self.stop_zone_count +=1
+        else:
+           self.stop_zone_count = 0 
+        if self.stop_zone_count == 10:
+            self.stop_zone()
+        
+
 
 
 ########################################################################################################################    
