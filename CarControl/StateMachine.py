@@ -84,7 +84,7 @@ class StateController(object):
              #   self.avoidObstacleRight()
             #elif self.obstacle_count == 1:
              #   self.avoidObstacleLeft()
-            self.avoidObstacleLeft()
+            self.avoidObstacleRight()
         if self.state is State.PIETONS:
             self.savePietons()
 
@@ -122,12 +122,11 @@ class StateController(object):
     def avoidObstacleRight(self):
         self.angle = 45
         self.dir_control.turn(self.angle)
-        self.dir_control.setSpeed(50)
-        time.sleep(1)
+        time.sleep(1.5)
         self.angle = -30
         self.dir_control.turn(self.angle)
         time.sleep(2)
-        self.angle = -35
+        self.angle = -45
         self.dir_control.turn(self.angle)
         time.sleep(2)
         print("Obstacle avoided, going back to line following")
