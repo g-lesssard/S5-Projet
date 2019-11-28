@@ -26,6 +26,10 @@ MARBLE_RADIUS = 0.0075
 #to be determined
 FRAME_FRICTION_COEFFICIENT = 0.2
 
+# Substract volume radius
+# (to verify)
+FRAME_RADIUS = 140.0 - 0.0075
+
 #####################################################
 # Forces equations #
 #####################################################
@@ -82,7 +86,7 @@ def cinematique_speed(current_time, init_s = mu.Vector(), init_a = mu.Vector((0.
 # Collision section, m in kg and v in m/s
 # initial masses are at 2 kg by default so 1/m1 + 1/m2 would be 1 by default
 def collision3D(speed1, e = 1.0, normale = mu.Vector((0,0,1)), speed2 = mu.Vector((0,0,0)), m1 = 2.0, m2 = 2.0):
-    p = (1 + e) * speed1.dot(normale) * (normale) / (1/m1 + 1/m2)
+    p = (1 + e) * speed1.dot(normale) * (normale) / (1.0/m1 + 1.0/m2)
     return ((speed1 - p), (speed2 + p))
 
 ####################################################
@@ -90,30 +94,72 @@ def collision3D(speed1, e = 1.0, normale = mu.Vector((0,0,1)), speed2 = mu.Vecto
 ####################################################
 
 def forces_accel_on_marble(marble_vit = mu.Vector(), unit_normale = mu.Vector((0.0, 0.0, 1.0))):
-    marble_gravity_f = gravity_force(MARBLE_MASS)
-    marble_drag_f = drag_force_sphere(MARBLE_RADIUS, marble_vit)
+    marble_forces_list = []    
+    marble_forces_list.append(gravity_force(MARBLE_MASS))
+    marble_forces_list.append(drag_force_sphere(MARBLE_RADIUS, marble_vit))
     marble_normale_f = marble_normal_force(unit_normale)
-    marble_friction_f = friction_force(FRAME_FRICTION_COEFFICIENT, marble_vit, marble_normale_f)
-    
-    marble_cumulatif_f = total_force([marble_gravity_f, marble_drag_f, marble_normale_f, marble_friction_f])
+    marble_forces_list.append(marble_normale_f)
+    marble_forces_list.append(friction_force(FRAME_FRICTION_COEFFICIENT, marble_vit, marble_normale_f))
+        
+    marble_cumulatif_f = total_force(marble_forces_list)
     
     return marble_cumulatif_f / MARBLE_MASS
 
-# marble_pos / _vit / _accel are all in mm, but they NEED to be translate to m through all method
-def frame_marble(normale_center_object = None, timestep = 0.1, marble_pos = mu.Vector(), marble_vit = mu.Vector(), marble_accel = mu.Vector()):
-    # Convert to m from mm (vit and pos are not necessary, but are like that for lisibility
-    marble_pos = marble_pos / 1000
-    marble_vit = marble_vit / 1000
-    # Is this acceleration even necessary?
-    marble_accel = marble_accel / 1000
+###################################################
+# Utility functions #
+###################################################
+
+# Correction of position in case marble is IN frame
+def correct_marble_pos(marble_pos, normale_edge):
+    temp_normale = normale_edge - marble_pos
     
-    normale_edge = normale_center_object.location
-    unit_normale = normale_edge - marble_pos
+    
+    print("Temp normale: " + str(temp_normale))
+    return normale_edge - ((FRAME_RADIUS / temp_normale.length) * temp_normale)
+
+def update_new_pos(timestep, marble_pos, marble_vit, marble_accel, normale_edge):
+    new_pos = mu.Vector()
+    new_pos[0] = cinematique_position(timestep, marble_pos[0], marble_vit[0], marble_accel[0])
+    new_pos[1] = cinematique_position(timestep, marble_pos[1], marble_vit[1], marble_accel[1])
+    new_pos[2] = cinematique_position(timestep, marble_pos[2], marble_vit[2], marble_accel[2])
+    return correct_marble_pos(new_pos, normale_edge)
+    
+def update_new_vit(timestep, speed, accel):   
+    new_speed = mu.Vector() 
+    new_speed[0] = cinematique_speed(timestep, speed[0], accel[0])
+    new_speed[1] = cinematique_speed(timestep, speed[1], accel[1])
+    new_speed[2] = cinematique_speed(timestep, speed[2], accel[2])  
+    return speed
+
+def get_unit_normale(final_point, init_point):
+    unit_normale = final_point - init_point
     unit_normale.normalize()
+    return unit_normale
+
+# Get speed directly on frame plane
+def get_rotated_speed(unit_normale, prev_unit_normale, vit_to_rotate):
+    ang = prev_unit_normale.angle(unit_normale) if unit_normale.length > 0.0 else mu.Vector()
+    axis = prev_unit_normale.cross(unit_normale) if unit_normale.length > 0.0 else mu.Vector()
+    mat = mu.Matrix.Rotation(ang, 3, axis) if unit_normale.length > 0.0 else mu.Matrix()
+             
+    return mat @ vit_to_rotate if unit_normale.length > 0.0 else vit_to_rotate
+
+# marble_pos / _vit / _accel are all in mm, but they NEED to be translate to m through all method
+def frame_marble(normale_center_object = None, timestep = 1/60, pos = mu.Vector(), marble_vit = mu.Vector(), prev_normale = mu.Vector((0.0, 0.0, 1.0))):
+    # Convert to m from mm (vit and pos are not necessary, but are like that for lisibility
+    marble_pos = pos / 1000.0 
+        
+    normale_edge = normale_center_object.location / 1000.0
+    unit_normale = get_unit_normale(normale_edge, marble_pos)
+
+    # Correction of speed orientation if needed
+    rotated_speed = get_rotated_speed(unit_normale, prev_normale, marble_vit)
     
-    marble_forces_accel = forces_accel_on_marble(marble_vit, unit_normale)
-    
-    marble_accel = marble_forces_accel    
+    marble_accel = forces_accel_on_marble(marble_vit, unit_normale) 
+
+    # Position / velocity update    
+    marble_pos = update_new_pos(timestep, marble_pos, rotated_speed, marble_accel, normale_edge)    
+    marble_vit = update_new_vit(timestep, rotated_speed, marble_accel)
     
     # Return as mm (vit and pos are not necessary, but are like that for lisibility
-    return 1000*marble_pos, 1000*marble_vit, 1000*marble_accel    
+    return marble_pos*1000.0, marble_vit, unit_normale    
