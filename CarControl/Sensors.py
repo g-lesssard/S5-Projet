@@ -6,7 +6,7 @@ import Libraries.line_follower as lf
 
 ########################################################################################################################
 RADAR_CHANNEL = 20
-THRESHOLD_DISTANCE = 3
+THRESHOLD_DISTANCE = 30
 ########################################################################################################################
 
 class Radar(object):
@@ -30,7 +30,7 @@ class Radar(object):
     def detectObject(self):
         while self.running:
             #self.mutex.acquire()
-            self.filtered_distance = self.UA.get_distance()
+            self.filtered_distance = int(0.5*self.UA.get_distance() +  0.5*self.filtered_distance)
             if self.printing:
                 print("Object at {}".format(self.filtered_distance))
             if self.filtered_distance < THRESHOLD_DISTANCE and self.filtered_distance != -1:

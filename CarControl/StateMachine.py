@@ -45,10 +45,11 @@ class StateController(object):
 
     def __init__(self, printing=False):
         self.state = State.BASE_LINE_FOLLOWER
-        self.radar = Sensors.Radar(printing=False)
-        self.line_follower = Sensors.Line_Follower(printing=True)
+        self.radar = Sensors.Radar(printing=True)
+        self.line_follower = Sensors.Line_Follower(printing=False)
         self.dir_control = DirectionControl(printing=False)
         self.angle = 0
+        self.obstacle_count = 0
 
     def startReadingThreads(self):
         self.radar.startReading()
@@ -79,7 +80,11 @@ class StateController(object):
         if self.state is State.BASE_LINE_FOLLOWER:
             self.follow_line()
         if self.state is State.AVOID_OBSTACLE:
-            self.avoidObstacle()
+            #if self.obstacle_count == 0:
+             #   self.avoidObstacleRight()
+            #elif self.obstacle_count == 1:
+             #   self.avoidObstacleLeft()
+            self.avoidObstacleLeft()
         if self.state is State.PIETONS:
             self.savePietons()
 
@@ -114,12 +119,33 @@ class StateController(object):
             pass
         self.dir_control.turn(self.angle)
 
-    def avoidObstacle(self):
-        time.sleep(0.1)
-        self.dir_control.setSpeed(0)
+    def avoidObstacleRight(self):
+        self.angle = 45
+        self.dir_control.turn(self.angle)
+        self.dir_control.setSpeed(50)
+        time.sleep(1)
+        self.angle = -30
+        self.dir_control.turn(self.angle)
+        time.sleep(2)
+        self.angle = -35
+        self.dir_control.turn(self.angle)
         time.sleep(2)
         print("Obstacle avoided, going back to line following")
+        self.obstacle_count += 1
         self.state = State.BASE_LINE_FOLLOWER
+
+    def avoidObstacleLeft(self):
+        self.angle = -30
+        self.dir_control.turn(-30)
+        time.sleep(1.5)
+        self.angle = 0
+        self.dir_control.turnRight(self.angle)
+        time.sleep(2)
+        self.angle = 30
+        self.dir_control.turn(30)
+        self.radar.removeObserver(self.objectDetected)
+        self.state = State.BASE_LINE_FOLLOWER
+
 
     def savePietons(self):
         self.dir_control.setSpeed(30)
