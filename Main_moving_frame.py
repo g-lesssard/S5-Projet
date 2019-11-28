@@ -32,6 +32,13 @@ bpy.context.scene.frame_set(frame_num)
 
 frame_marble(ob_Sphere, 0.1, ob_Marble.location, mu.Vector())
 
+#For testing purpose only
+position = ob_Marble.location
+vit = mu.Vector((1.0, 1.0, 1.0))
+accel = mu.Vector((1.0, 1.0, 1.0))
+for i in range(0,2):
+    position, vit, accel = frame_marble(ob_Sphere, 0.1, position, vit, accel)     
+
 #for position in marble_pos_path:
 #    bpy.context.scene.frame_set(frame_num)
 #    ob_Marble.location = position*1000

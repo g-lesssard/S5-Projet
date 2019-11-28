@@ -89,16 +89,7 @@ def collision3D(speed1, e = 1.0, normale = mu.Vector((0,0,1)), speed2 = mu.Vecto
 # Forces on marble #
 ####################################################
 
-# marble_pos / _vit / _accel are all in mm, but they NEED to be translate to m through all method
-def frame_marble(normale_center_object = None, timestep = 0.1, marble_pos = mu.Vector(), marble_vit = mu.Vector(), marble_accel = mu.Vector()):
-    marble_pos = marble_pos / 1000
-    marble_vit = marble_vit / 1000
-    marble_accel = marble_accel / 1000
-    
-    normale_edge = normale_center_object.location
-    unit_normale = normale_edge - marble_pos
-    unit_normale.normalize()
-    
+def forces_accel_on_marble(marble_vit = mu.Vector(), unit_normale = mu.Vector((0.0, 0.0, 1.0))):
     marble_gravity_f = gravity_force(MARBLE_MASS)
     marble_drag_f = drag_force_sphere(MARBLE_RADIUS, marble_vit)
     marble_normale_f = marble_normal_force(unit_normale)
@@ -106,5 +97,23 @@ def frame_marble(normale_center_object = None, timestep = 0.1, marble_pos = mu.V
     
     marble_cumulatif_f = total_force([marble_gravity_f, marble_drag_f, marble_normale_f, marble_friction_f])
     
-    marble_accel = marble_cumulatif_f / MARBLE_MASS
-    print(str(marble_accel))
+    return marble_cumulatif_f / MARBLE_MASS
+
+# marble_pos / _vit / _accel are all in mm, but they NEED to be translate to m through all method
+def frame_marble(normale_center_object = None, timestep = 0.1, marble_pos = mu.Vector(), marble_vit = mu.Vector(), marble_accel = mu.Vector()):
+    # Convert to m from mm (vit and pos are not necessary, but are like that for lisibility
+    marble_pos = marble_pos / 1000
+    marble_vit = marble_vit / 1000
+    # Is this acceleration even necessary?
+    marble_accel = marble_accel / 1000
+    
+    normale_edge = normale_center_object.location
+    unit_normale = normale_edge - marble_pos
+    unit_normale.normalize()
+    
+    marble_forces_accel = forces_accel_on_marble(marble_vit, unit_normale)
+    
+    marble_accel = marble_forces_accel    
+    
+    # Return as mm (vit and pos are not necessary, but are like that for lisibility
+    return 1000*marble_pos, 1000*marble_vit, 1000*marble_accel    
