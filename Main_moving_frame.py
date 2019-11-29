@@ -1,7 +1,7 @@
 import bpy
 import sys
 import os
-import mathutils as muS
+import mathutils as mu
 
 dir = os.path.dirname(bpy.data.filepath)
 if not dir in sys.path:
@@ -32,7 +32,7 @@ ob_Marble.location = initiale_marble_pos
 ob_Marble_rotation = ob_Marble.rotation_euler
 ob_Marble.animation_data_clear()
 
-animation_length = 24
+animation_length = 0
 
 frame_num = 0
 
