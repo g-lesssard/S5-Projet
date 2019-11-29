@@ -4,9 +4,13 @@ import time
 from Libraries.SunFounder_Ultrasonic_Avoidance.Ultrasonic_Avoidance import Ultrasonic_Avoidance, GPIO
 import Libraries.line_follower as lf
 
+from picar import filedb
+config_file = '/home/projet/CarControl/config'
+
 ########################################################################################################################
 RADAR_CHANNEL = 20
-THRESHOLD_DISTANCE = 30
+THRESHOLD_DISTANCE = 3
+DIFFERENCE_THRESHOLD = 40
 ########################################################################################################################
 
 class Radar(object):
@@ -15,7 +19,7 @@ class Radar(object):
         self.UA = Ultrasonic_Avoidance(channel=RADAR_CHANNEL)
         self.onObjectDetected = Event()
         self.reading_thread = None
-        self.filtered_distance = 0
+        self.filtered_distance = 50
         self.printing = printing
         self.running = False
         time.sleep(0.5)
@@ -30,12 +34,15 @@ class Radar(object):
     def detectObject(self):
         while self.running:
             #self.mutex.acquire()
+            new_data = self.UA.get_distance()
+            if abs(new_data - self.filtered_distance) > THRESHOLD_DISTANCE or new_data == -1:
+                new_data = self.filtered_distance
             self.filtered_distance = int(0.5*self.UA.get_distance() +  0.5*self.filtered_distance)
             if self.printing:
                 print("Object at {}".format(self.filtered_distance))
             if self.filtered_distance < THRESHOLD_DISTANCE and self.filtered_distance != -1:
                 self.onObjectDetected()
-            time.sleep(0.3)
+            time.sleep(0.05)
             #self.mutex.release()
         return
 
@@ -70,15 +77,29 @@ class Line_Follower():
         self.pietons = Event()
         self.sharp_turn = Event()
         self.stop_zone = Event()
+        self.line_found = Event()
         self.printing = printing
         self.running = False
+        self.fire_count = 0
 
         self.pietons_count = 0
         self.stop_zone_count = 0
         time.sleep(0.5)
 
     def calibrate(self):
-        lf.cali()
+        db = filedb.fileDB(db=config_file)
+        key = input('Enter Y to calibrate, N otherwise: ')
+        if key == 'Y':    
+            lf.cali()
+            db.set('line_follower_references', lf.lf.references)
+        else:
+            reference_string = (db.get('line_follower_references'))
+            reference_string = reference_string[1:(len(reference_string)-2)].split(',')
+            for i in range(0, len(reference_string)): 
+                reference_string[i] = float(reference_string[i])
+                lf.lf.references = reference_string
+            print("References are: {}".format(lf.lf.references))
+            
 
     def setPrinting(self, printing):
         self.printing = True
@@ -90,6 +111,8 @@ class Line_Follower():
             self.sharp_turn += observer_method
         elif event == 'stop_zone':
             self.stop_zone += observer_method
+        elif event == 'line_found':
+            self.line_found += observer_method
 
 
     def removeObserver(self, observer_method, event):
@@ -99,6 +122,9 @@ class Line_Follower():
             self.sharp_turn -= observer_method
         elif event == 'stop_zone':
             self.stop_zone -= observer_method
+        elif event == 'line_found':
+            self.line_found += observer_method
+            self.fire_count = 0
 
     def detectLine(self):
         count = 0
@@ -107,15 +133,10 @@ class Line_Follower():
             self.previous_data = self.data
             self.data = lf.lf.read_digital()
             self.lookForEvents()
-            #if self.printing:
-            #    print("New data is: {0}, and old data is: {1}".format(data, self.data))
-            
-
             if self.printing:
                 print("Linefollower data: {0}, count: {1}".format(self.data, count))
-            
-            time.sleep(0.05)
             self.mutex.release()
+            time.sleep(0.05)            
         return
 
     def startReading(self):
@@ -136,6 +157,7 @@ class Line_Follower():
         self.lookForPietons()
         self.lookForSharpTurn()
         self.lookForStopZone()
+        self.lookForLine()
 
     def lookForPietons(self):
         if (self.previous_data == [0,0,1,0,0] or self.previous_data == [0,1,1,0,0] or self.previous_data == [0,0,1,1,0]) and self.data == [0,0,0,0,0]:
@@ -159,6 +181,12 @@ class Line_Follower():
            self.stop_zone_count = 0 
         if self.stop_zone_count == 10:
             self.stop_zone()
+
+    def lookForLine(self):
+        if (self.data == [1,0,0,0,0] or self.data == [1,1,0,0,0] and self.fire_count == 0):
+            print('Firing line found event')
+            self.line_found()
+            self.fire_count += 1
         
 
 

@@ -66,29 +66,29 @@ class DirectionControl(object):
 
     def turn(self, angle):
         if angle >=0:
+            self.setWheels(wheel='left', speed=self.speed)
             if self.printing:
                 print("turning right at {} degrees".format(angle))
             self.turnRight(angle)
             if angle == 45:
                 self.setWheels(wheel='right', speed=0)
-            else:
-                self.setWheels(wheel='right', speed=self.speed)
-            if angle == 40:
-                self.setWheels(wheel='right', speed=30)
+            if angle == 41 or angle == 31 or angle == -21:
+                self.setWheels(wheel='right', speed=0)
             else:
                 self.setWheels(wheel='right', speed=self.speed)
         elif angle < 0:
+            self.setWheels(wheel='right', speed=self.speed)
             if self.printing:
                 print("turning left at {} degrees".format(angle))
             self.turnLeft(abs(angle))
             if angle == -45:
                 self.setWheels(wheel='left', speed=0)
-            else:
-                self.setWheels(wheel='left', speed=self.speed)
-            if angle == -40:
+            if angle == -41 or angle == -31 or angle == -21:
                 self.setWheels(wheel='left', speed=0)
             else:
                 self.setWheels(wheel='left', speed=self.speed)
+
+
 
     def turnRight(self,angle): 
         if angle > 45: 
@@ -109,12 +109,16 @@ class DirectionControl(object):
 
     def setWheels(self, wheel = 'both', speed = 0):
         if wheel is 'left':
+            if self.printing:
+                print("Adjusting left wheel")
             self.bw.right_wheel.speed = abs(speed)
             if speed < 0:
                 self.bw.right_wheel.backward()
             else:
                 self.bw.right_wheel.forward()
         elif wheel is 'right':
+            if self.printing:
+                print("Adjusting right wheel")
             self.bw.left_wheel.speed = abs(speed)
             if speed < 0:
                 self.bw.left_wheel.backward()
