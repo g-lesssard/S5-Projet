@@ -21,9 +21,9 @@ def set_location_at_keyframe(object, frame_number, location):
     object.location = location
     object.keyframe_insert(data_path="location", index = -1)    
     
-initiale_marble_pos = mu.Vector((0.0, 0.0, 1.0662171840667725))  
-test_marble_pos = mu.Vector((1.297707, 0.0, 1.1599787))
-initiale_carFrame_pos = mu.Vector((0.0, 0.0, 0.25))  
+initiale_marble_pos = mu.Vector((0.0, 0.0, 10.619390487670898))  
+test_marble_pos = mu.Vector((-11.0892972946167, 0.0, 11.624490737915039))
+initiale_carFrame_pos = mu.Vector((0.0, 0.0, 2.5))  
 ob_Sphere = bpy.data.objects["Substract Volume"]
 ob_CarFrame = bpy.data.objects["CarFrame"]
 
@@ -32,7 +32,7 @@ ob_Marble.location = initiale_marble_pos
 ob_Marble_rotation = ob_Marble.rotation_euler
 ob_Marble.animation_data_clear()
 
-animation_length = 4
+animation_length = 24
 
 frame_num = 0
 
@@ -40,17 +40,17 @@ bpy.context.scene.frame_set(frame_num)
 
 # temp to set at start
 set_location_at_keyframe(ob_Marble, 0, initiale_marble_pos)
-set_location_at_keyframe(ob_Marble, 0, test_marble_pos)
+#set_location_at_keyframe(ob_Marble, 0, test_marble_pos)
 
-set_location_at_keyframe(ob_CarFrame, 0, initiale_carFrame_pos)
+#set_location_at_keyframe(ob_CarFrame, 0, initiale_carFrame_pos)
 
 #For testing purpose only
 position = ob_Marble.location
 vit = mu.Vector((0.0, 0.0, 0.0))
 unit_normale = get_unit_normale(ob_Sphere.location, position)
-timestep = 1.0/60.0 #we are currently at 60 fps
+timestep = 1.0/30.0 #we are currently at 60 fps
 for frame_number in range(1,animation_length):
-    position, vit, unit_normale = frame_marble(ob_Sphere, timestep, position, vit, unit_normale)     
+    position, vit, unit_normale = frame_marble(ob_Sphere, timestep, position, vit, unit_normale, frame_number)     
     set_location_at_keyframe(ob_Marble, frame_number, position)  
     
 #frame_num = 0 
