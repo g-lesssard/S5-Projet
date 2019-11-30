@@ -9,7 +9,7 @@ config_file = '/home/projet/CarControl/config'
 
 ########################################################################################################################
 RADAR_CHANNEL = 20
-THRESHOLD_DISTANCE = 3
+THRESHOLD_DISTANCE = 35
 DIFFERENCE_THRESHOLD = 40
 ########################################################################################################################
 
@@ -42,7 +42,7 @@ class Radar(object):
                 print("Object at {}".format(self.filtered_distance))
             if self.filtered_distance < THRESHOLD_DISTANCE and self.filtered_distance != -1:
                 self.onObjectDetected()
-            time.sleep(0.05)
+            time.sleep(0.01)
             #self.mutex.release()
         return
 
@@ -184,7 +184,6 @@ class Line_Follower():
 
     def lookForLine(self):
         if (self.data == [1,0,0,0,0] or self.data == [1,1,0,0,0] and self.fire_count == 0):
-            print('Firing line found event')
             self.line_found()
             self.fire_count += 1
         

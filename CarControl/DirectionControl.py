@@ -11,6 +11,7 @@ class DirectionControl(object):
 
     def __init__(self, printing=False):
         self.fw = front_wheels.Front_Wheels(db=config_file)
+        self.fw.debug = False
         self.bw = back_wheels.Back_Wheels(db=config_file)
         self.printing = printing
         self.speed = 0
@@ -70,9 +71,9 @@ class DirectionControl(object):
             if self.printing:
                 print("turning right at {} degrees".format(angle))
             self.turnRight(angle)
-            if angle == 45:
+            if angle == 44:
                 self.setWheels(wheel='right', speed=0)
-            if angle == 41 or angle == 31 or angle == -21:
+            elif angle == 41 or angle == 31 or angle == -21:
                 self.setWheels(wheel='right', speed=0)
             else:
                 self.setWheels(wheel='right', speed=self.speed)
@@ -81,9 +82,9 @@ class DirectionControl(object):
             if self.printing:
                 print("turning left at {} degrees".format(angle))
             self.turnLeft(abs(angle))
-            if angle == -45:
+            if angle == -44:
                 self.setWheels(wheel='left', speed=0)
-            if angle == -41 or angle == -31 or angle == -21:
+            elif angle == -41 or angle == -31 or angle == -21:
                 self.setWheels(wheel='left', speed=0)
             else:
                 self.setWheels(wheel='left', speed=self.speed)
@@ -104,21 +105,22 @@ class DirectionControl(object):
 
 
     def stop(self):
+        self.turn(0)
         self.running = False
         self.setSpeed(0, hard_set=True)
 
     def setWheels(self, wheel = 'both', speed = 0):
         if wheel is 'left':
-            if self.printing:
-                print("Adjusting left wheel")
+            #if self.printing:
+                #print("Adjusting left wheel")
             self.bw.right_wheel.speed = abs(speed)
             if speed < 0:
                 self.bw.right_wheel.backward()
             else:
                 self.bw.right_wheel.forward()
         elif wheel is 'right':
-            if self.printing:
-                print("Adjusting right wheel")
+            #if self.printing:
+                #print("Adjusting right wheel")
             self.bw.left_wheel.speed = abs(speed)
             if speed < 0:
                 self.bw.left_wheel.backward()
@@ -152,7 +154,7 @@ if __name__ == "__main__":
     time.sleep(1)
     DC.setSpeed(0)
 
-    angles = [10, 20, 25, 30, 45]
+    angles = [10, 20, 25, 30, 44]
     DC.turnLeft(0)
     DC.setTurningOffset()
     for angle in angles:

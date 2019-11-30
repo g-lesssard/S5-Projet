@@ -50,7 +50,7 @@ class StateController(object):
     def __init__(self, printing=False):
         self.state = State.START
         self.radar = Sensors.Radar(printing=False)
-        self.line_follower = Sensors.Line_Follower(printing=True)
+        self.line_follower = Sensors.Line_Follower(printing=False)
         self.dir_control = DirectionControl(printing=False)
         self.angle = 0
         self.obstacle_count = 0
@@ -69,12 +69,12 @@ class StateController(object):
         self.state = State.AVOID_OBSTACLE
     
     def pietonsDetected(self):
-        print("Pietons detected, stopping...")
-        self.state = State.PIETONS
+        if self.state is State.BASE_LINE_FOLLOWER:
+            print("Pietons detected, stopping...")
+            self.state = State.PIETONS
 
     def lineFound(self):
         print("Line found, following it...")
-        #self.line_follower.removeObserver(observer_method=self.lineFound, event='line_found')
         self.state = State.BASE_LINE_FOLLOWER
 
     def sharpTurnDetected(self):
@@ -126,7 +126,7 @@ class StateController(object):
         if refs == [0,0,1,0,0]:
             self.angle = -0
         elif refs == [0,0,0,0,1]:
-            self.angle = 45
+            self.angle = 44
         elif refs == [0,0,0,1,1]:
             self.angle = 40
         elif refs == [0,0,0,1,0]:
@@ -134,7 +134,7 @@ class StateController(object):
         elif refs == [0,0,1,1,0]:
             self.angle = 8
         elif refs == [1,0,0,0,0]:
-            self.angle = -45
+            self.angle = -44
         elif refs == [1,1,0,0,0]:
             self.angle = -40
         elif refs == [0,1,0,0,0]:
@@ -150,7 +150,7 @@ class StateController(object):
         if refs == [0,0,1,0,0]:
             self.angle = -0
         elif refs == [0,0,0,0,1]:
-            self.angle = 45
+            self.angle = 41
         elif refs == [0,0,0,1,1]:
             self.angle = 41
         elif refs == [0,0,0,1,0]:
@@ -158,7 +158,7 @@ class StateController(object):
         elif refs == [0,0,1,1,0]:
             self.angle = 21
         elif refs == [1,0,0,0,0]:
-            self.angle = -45
+            self.angle = -41
         elif refs == [1,1,0,0,0]:
             self.angle = -41
         elif refs == [0,1,0,0,0]:
@@ -171,23 +171,24 @@ class StateController(object):
         
 
     def avoidObstacleRight(self):
-        self.angle = 30
+        self.radar.removeObserver(observer_method=self.objectDetected)
+        self.angle = 40
         self.dir_control.turn(self.angle)
         time.sleep(1.5)
         
         self.angle = 0
         self.dir_control.turn(self.angle)
-        time.sleep(1)
+        time.sleep(1.5)
         
-        self.angle = -45
+        self.angle = -44
         self.dir_control.turn(self.angle)
         time.sleep(0.5)
 
         self.angle = -40
         self.dir_control.turn(self.angle)
-        time.sleep(2)
+        time.sleep(2.2)
         
-        self.angle = -45
+        self.angle = -44
         self.dir_control.turn(self.angle)
         time.sleep(2)
         
@@ -197,6 +198,8 @@ class StateController(object):
         self.state = State.LINE_FINDER
 
     def sharpTurn(self):
+        self.line_follower.removeObserver(observer_method=self.sharpTurnDetected, event='sharp_turn')
+        self.radar.addObserver(observer_method=self.objectDetected)
         self.dir_control.setSpeed(0)
         self.dir_control.turnLeft(44)
         self.cruising_speed = -50
@@ -204,35 +207,36 @@ class StateController(object):
         time.sleep(1.5)
 
         self.dir_control.turnRight(0)
-        self.cruising_speed = 45
+        self.cruising_speed = 60
         self.dir_control.setSpeed(self.cruising_speed)
         time.sleep(0.3)
 
         self.dir_control.turnRight(30)
         time.sleep(0.4)
+        self.dir_control.turn(0)
         self.state = State.SLALOM      
 
     def avoidObstacleLeft(self):
+        self.radar.removeObserver(self.objectDetected)
         self.angle = -30
-        self.dir_control.turn(-30)
+        self.dir_control.turn(self.angle)
         time.sleep(1.5)
         self.angle = 0
         self.dir_control.turnRight(self.angle)
-        time.sleep(2)
+        time.sleep(1)
         self.angle = 30
-        self.dir_control.turn(30)
-        self.radar.removeObserver(self.objectDetected)
+        self.dir_control.turn(self.angle)
         self.cruising_speed = 60
         self.dir_control.setSpeed(self.cruising_speed)
         self.state = State.BASE_LINE_FOLLOWER
 
 
     def savePietons(self):
-        self.line_follower.removeObserver(observer_method=self.sharpTurnDetected, event='sharp_turn')
         self.dir_control.setSpeed(30)
         time.sleep(2.69)
         self.dir_control.setSpeed(0)
         time.sleep(2)
+        self.dir_control.setSpeed(60)
         self.state = State.BASE_LINE_FOLLOWER
 
     def finish(self):
