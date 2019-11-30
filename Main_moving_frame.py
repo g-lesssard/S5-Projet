@@ -32,7 +32,7 @@ ob_Marble.location = initiale_marble_pos
 ob_Marble_rotation = ob_Marble.rotation_euler
 ob_Marble.animation_data_clear()
 
-animation_length = 0
+animation_length = 101
 
 frame_num = 0
 

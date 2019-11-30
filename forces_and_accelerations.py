@@ -103,7 +103,7 @@ def forces_accel_on_marble(marble_vit = mu.Vector(), unit_normale = mu.Vector((0
     marble_forces_list.append(drag_force_sphere(MARBLE_RADIUS, marble_vit))
     marble_normale_f = marble_normal_force(unit_normale, marble_gravity_f)
     marble_forces_list.append(marble_normale_f)
-    marble_forces_list.append(-friction_force(FRAME_FRICTION_COEFFICIENT, marble_vit, marble_normale_f))
+    marble_forces_list.append(friction_force(FRAME_FRICTION_COEFFICIENT, marble_vit, marble_normale_f))
         
     marble_cumulatif_f = total_force(marble_forces_list)
     
@@ -214,7 +214,7 @@ def frame_marble(normale_center_object = None, timestep = 1/60, pos = mu.Vector(
     # there was rotated_speed hrere before
     friction_f_vit = rotated_speed - frame_vit_rotated 
     print(str(friction_f_vit))
-    marble_accel = forces_accel_on_marble(friction_f_vit, unit_normale) 
+    marble_accel = forces_accel_on_marble(rotated_speed, unit_normale) - frame_accel
 
     # Position / velocity update    
     new_marble_pos = update_new_pos(timestep, marble_pos, rotated_speed, marble_accel, normale_edge)   
