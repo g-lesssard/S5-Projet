@@ -20,7 +20,11 @@ from forces_and_accelerations import *
 def set_location_at_keyframe(object, frame_number, location):
     bpy.context.scene.frame_set(frame_number)
     object.location = location
-    object.keyframe_insert(data_path="location", index = -1)        
+    object.keyframe_insert(data_path="location", index = -1)     
+    
+def update_scene():
+    dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()   
     
 # Position to be at right height and centered with the car framne
 initiale_marble_pos = mu.Vector((0.0, 0.0, 8.119390487670898))  
@@ -29,7 +33,6 @@ test_marble_pos = mu.Vector((-11.0892972946167, 0.0, 11.624490737915039))
 initiale_carFrame_pos = mu.Vector((0.0, 0.0, 2.5))  
 ob_Sphere = bpy.data.objects["Substract Volume"]
 ob_CarFrame = bpy.data.objects["CarFrame"]
-ob_Car_Path1 = bpy.data.objects["Car_Path1"]
 
 ob_Marble = bpy.data.objects["Marble"]
 ob_Marble.location = initiale_marble_pos
@@ -42,6 +45,9 @@ frame_num = 0
 
 bpy.context.scene.frame_set(frame_num)
 
+ob_CarFrame.parent = bpy.data.objects["Car_Path1"]
+update_scene()
+
 # temp to set at start
 set_location_at_keyframe(ob_Marble, 0, initiale_marble_pos + get_global_co(ob_CarFrame))
 #set_location_at_keyframe(ob_Marble, 0, test_marble_pos)
@@ -50,9 +56,12 @@ set_location_at_keyframe(ob_Marble, 0, initiale_marble_pos + get_global_co(ob_Ca
 position = ob_Marble.location
 vit = mu.Vector((0.0, 0.0, 0.0))
 unit_normale = get_unit_normale(get_global_co(ob_Sphere), position)
-timestep = 1.0/30.0 #we are currently at 60 fps
 
-for frame_number in range(1,animation_length):
+# Get framerate
+framerate = bpy.context.scene.render.fps
+timestep = 1.0 / framerate 
+
+for frame_number in range(frame_num + 1, frame_num + animation_length):
     position, vit, unit_normale = frame_marble(ob_Sphere, timestep, position, vit, unit_normale, frame_number)     
     set_location_at_keyframe(ob_Marble, frame_number, position)  
     
