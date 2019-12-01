@@ -208,12 +208,10 @@ def frame_marble(normale_center_object = None, timestep = 1/60, pos = mu.Vector(
     marble_accel = forces_accel_on_marble(rotated_speed, unit_normale, is_marble_contained) 
     if is_marble_contained:
         marble_accel -= frame_accel
-    print("Acceleration: " + str(marble_accel))
 
     # Position / velocity update    
     new_marble_pos = update_new_pos(timestep, marble_pos, rotated_speed, marble_accel, normale_edge, is_marble_contained)   
     new_vit = update_new_vit(timestep, rotated_speed, marble_accel)
     
-    print("")
     # Return as mm
     return new_marble_pos * 1000.0, new_vit, unit_normale    
