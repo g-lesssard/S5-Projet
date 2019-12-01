@@ -66,8 +66,6 @@ def drag_force_sphere(radius, velocity = mu.Vector()):
     return d_force
 
 def friction_force(coefficient, direction_v, normale_F):
-    print("Friction force calculation.......")
-    print("Initial friction speed: " + str(direction_v))
     direction_v_inv = mu.Vector(direction_v)
     direction_v_inv.negate()
     direction_v_inv.normalize()    
@@ -114,10 +112,15 @@ def forces_accel_on_marble(marble_vit = mu.Vector(), unit_normale = mu.Vector((0
 # Utility functions #
 ###################################################
 
+# Return global coord in meters
+def get_global_co(object):
+    return object.matrix_world @ mu.Vector((0.0, 0.0, 0.0))
+
 # Correction of position in case marble is IN frame
 def correct_marble_pos(marble_pos, normale_edge):
     temp_normale = normale_edge - marble_pos    
-    return normale_edge - ((FRAME_RADIUS / temp_normale.length) * temp_normale)
+    temp_normale.normalize()
+    return normale_edge - (FRAME_RADIUS * temp_normale)
 
 def update_new_pos(timestep, marble_pos, marble_vit, marble_accel, normale_edge, is_marble_in_contact = False):
     new_pos = mu.Vector()
@@ -126,6 +129,8 @@ def update_new_pos(timestep, marble_pos, marble_vit, marble_accel, normale_edge,
     new_pos[2] = cinematique_position(timestep, marble_pos[2], marble_vit[2], marble_accel[2])
     if is_marble_in_contact:
         new_pos = correct_marble_pos(new_pos, normale_edge)
+    elif new_pos[2] <= MARBLE_RADIUS:
+        new_pos[2] = MARBLE_RADIUS
     return new_pos
     
 def update_new_vit(timestep, speed, accel):   
@@ -141,24 +146,15 @@ def get_unit_normale(final_point, init_point):
     return unit_normale
 
 # Get speed directly on frame plane
-def get_rotated_speed(unit_normale, prev_unit_normale, vit_to_rotate):        
+def get_rotated_speed(unit_normale, prev_unit_normale, vit_to_rotate):       
+    # Hotfix
+    if prev_unit_normale.length <= 0.0:
+        prev_unit_normale = unit_normale 
     ang = prev_unit_normale.angle(unit_normale) if unit_normale.length > 0.0 else mu.Vector()
     axis = prev_unit_normale.cross(unit_normale) if unit_normale.length > 0.0 else mu.Vector()
     mat = mu.Matrix.Rotation(ang, 3, axis) if unit_normale.length > 0.0 else mu.Matrix()
              
     return mat @ vit_to_rotate if unit_normale.length > 0.0 else vit_to_rotate
-
-# Return estimation of the carframe's speed from frame (m/s)
-def get_frame_speed(current_frame, timestep):
-    if current_frame < 1:
-        return mu.Vector()
-    
-    car_frame = bpy.data.objects["CarFrame"]
-    bpy.context.scene.frame_set(current_frame - 1)
-    init_p = mu.Vector(car_frame.location)
-    bpy.context.scene.frame_set(current_frame)
-    final_p = mu.Vector(car_frame.location)
-    return (final_p - init_p) / (1000.0 * timestep)
 
 # Verify if should be pos-2 to pos0 or pos-1 to pos+1
 # Don't know the behavior when at the end of animation
@@ -171,13 +167,13 @@ def get_frame_pos_vit_accel(current_frame, timestep):
     final_v = mu.Vector()
         
     bpy.context.scene.frame_set(current_frame - 1)
-    prev_pos = car_frame.matrix_world @ mu.Vector((0.0, 0.0, 0.0)) / 1000.0
+    prev_pos = get_global_co(car_frame) / 1000.0
     
     bpy.context.scene.frame_set(current_frame)
-    current_pos = car_frame.matrix_world @ mu.Vector((0.0, 0.0, 0.0)) / 1000.0
+    current_pos = get_global_co(car_frame) / 1000.0
     
     bpy.context.scene.frame_set(current_frame + 1)
-    future_pos = car_frame.matrix_world @ mu.Vector((0.0, 0.0, 0.0)) / 1000.0
+    future_pos = get_global_co(car_frame) / 1000.0
     
     current_vit = (current_pos - prev_pos) / timestep
     future_vit = (future_pos - current_pos) / timestep
@@ -193,31 +189,31 @@ def frame_marble(normale_center_object = None, timestep = 1/60, pos = mu.Vector(
 #    print("Frame current position: " + str(frame_pos * 1000.0) + "(mm)")  
 #    print("Frame current velocity: " + str(frame_vit * 1000.0) + "(mm/s)")  
 #    print("Frame current acceleration: " + str(frame_accel * 1000.0) + "(mm/s2)")  
-#    print()
     
     # Convert to m from mm (vit and pos are not necessary, but are like that for lisibility
     marble_pos = pos / 1000.0 
-    
-    normale_edge = mu.Vector(normale_center_object.location) / 1000.0
+        
+    # As global coordinates
+    normale_edge = get_global_co(normale_center_object) / 1000.0
     
     # Is marble still in cup?
-    is_marble_contained = math.sqrt(marble_pos[0] ** 2 + marble_pos[1] ** 2) < 20.0 / 1000.0
-    print("Frame #" + str(current_frame) + " contained? " + str(is_marble_contained) + " distance: " + str(math.sqrt(marble_pos[0] ** 2 + marble_pos[1] ** 2)))
+    is_marble_contained = math.sqrt((marble_pos[0] - frame_pos[0]) ** 2 + (marble_pos[1] - frame_pos[1]) ** 2) < 20.0 / 1000.0
+    
     # If marble is not is cup, then there is no normale
     unit_normale = get_unit_normale(normale_edge, marble_pos) if is_marble_contained else mu.Vector()
 
     # Correction of speed orientation if needed
     rotated_speed = get_rotated_speed(unit_normale, prev_normale, marble_vit) if is_marble_contained else marble_vit
     
-    marble_accel = forces_accel_on_marble(rotated_speed, unit_normale, is_marble_contained) - frame_accel
-    print(" Acceleration: " + str(marble_accel))
+    marble_accel = forces_accel_on_marble(rotated_speed, unit_normale, is_marble_contained) 
+    if is_marble_contained:
+        marble_accel -= frame_accel
+    print("Acceleration: " + str(marble_accel))
 
     # Position / velocity update    
     new_marble_pos = update_new_pos(timestep, marble_pos, rotated_speed, marble_accel, normale_edge, is_marble_contained)   
-    
-    # Test
     new_vit = update_new_vit(timestep, rotated_speed, marble_accel)
     
     print("")
     # Return as mm
-    return new_marble_pos*1000.0, new_vit, unit_normale    
+    return new_marble_pos * 1000.0, new_vit, unit_normale    
