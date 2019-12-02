@@ -39,14 +39,18 @@ ob_Marble.location = initiale_marble_pos
 ob_Marble_rotation = ob_Marble.rotation_euler
 ob_Marble.animation_data_clear()
 
-animation_length = 240
-
 frame_num = 0
 
 bpy.context.scene.frame_set(frame_num)
 
-ob_CarFrame.parent = bpy.data.objects["Car_Path1"]
+ob_car_path = bpy.data.objects["Car_Path1"]
+ob_CarFrame.parent = ob_car_path
 update_scene()
+
+# Take path eval time as animation length
+animation_length = ob_car_path.data.path_duration
+# Set scene animation length to path animation length value
+bpy.context.scene.frame_end = animation_length
 
 # temp to set at start
 set_location_at_keyframe(ob_Marble, 0, initiale_marble_pos + get_global_co(ob_CarFrame))
