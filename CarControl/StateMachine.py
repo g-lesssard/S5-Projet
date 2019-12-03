@@ -89,7 +89,7 @@ class StateController(object):
         if self.state is State.SLALOM:
             print("Line lost, activating criss cross")
             self.state = State.LINE_LOSS
-            self.recovering_angle = -self.angle
+            self.recovering_angle = -0.7*self.angle
 
     def lineCentered(self):
         if self.state is State.LINE_LOSS:
@@ -202,10 +202,10 @@ class StateController(object):
         self.dir_control.turn(self.angle)
 
     def recovering_line(self):
-        self.dir_control.setSpeed(0)
+        self.dir_control.speed = 0
         self.angle = self.recovering_angle
         self.dir_control.turn(self.angle)
-        self.dir_control.setSpeed(-50)
+        self.dir_control.speed = -50
 
 
     def avoidObstacleRight(self):
@@ -228,7 +228,7 @@ class StateController(object):
         
         self.angle = -44
         self.dir_control.turn(self.angle)
-        time.sleep(1.8)
+        time.sleep(2.5)
 
         self.angle = -25
         self.dir_control.turn(self.angle)
@@ -242,18 +242,19 @@ class StateController(object):
         self.line_follower.removeObserver(observer_method=self.sharpTurnDetected, event='sharp_turn')
         self.radar.addObserver(observer_method=self.objectDetected)
         self.dir_control.turnRight(40)
-        time.sleep(0.1)
-        self.dir_control.setSpeed(0)
+        time.sleep(1)
+        self.dir_control.speed = 0
+        time.sleep(0.3)
         self.dir_control.turnLeft(30)
         self.cruising_speed = -50
-        self.dir_control.setSpeed(self.cruising_speed)
-        time.sleep(1.5)
+        self.dir_control.speed = self.cruising_speed
+        time.sleep(3)
 
 
         self.cruising_speed = 60
-        self.dir_control.setSpeed(self.cruising_speed)
+        self.dir_control.speed = self.cruising_speed
         self.dir_control.turnRight(30)
-        time.sleep(1)
+        time.sleep(3)
         self.dir_control.turn(0)
         self.line_follower.addObserver(event='line_lost', observer_method=self.lineLost)
         self.line_follower.addObserver(event='line_centered', observer_method=self.lineCentered)
@@ -264,10 +265,10 @@ class StateController(object):
         self.radar.addObserver(observer_method=self.objectDetected)
         self.dir_control.turnRight(40)
         time.sleep(0.1)
-        self.dir_control.setSpeed(0)
+        self.dir_control.speed = 0
         self.dir_control.turnLeft(30)
         self.cruising_speed = -20
-        self.dir_control.setSpeed(self.cruising_speed)
+        self.dir_control.speed = self.cruising_speed
         self.line_follower.addObserver(event='line_lost', observer_method=self.lineLost)
         self.line_follower.addObserver(event='line_centered', observer_method=self.lineCentered)
 
@@ -276,7 +277,7 @@ class StateController(object):
         self.angle = 40
         self.dir_control.turnRight(self.angle)
         self.cruising_speed = 60
-        self.dir_control.setSpeed(self.cruising_speed)
+        self.dir_control.speed = self.cruising_speed
         self.state = State.SLALOM
 
 
@@ -291,21 +292,22 @@ class StateController(object):
         self.angle = 30
         self.dir_control.turn(self.angle)
         self.cruising_speed = 60
-        self.dir_control.setSpeed(self.cruising_speed)
+        self.dir_control.speed = self.cruising_speed
         self.state = State.BASE_LINE_FOLLOWER
 
 
     def savePietons(self):
-        self.dir_control.setSpeed(40)
+        self.dir_control.speed = 40
         time.sleep(2.69)
-        self.dir_control.setSpeed(0)
+        self.dir_control.speed = 0
         time.sleep(2)
-        self.dir_control.setSpeed(60)
+        self.cruising_speed = 60
+        self.dir_control.speed = self.cruising_speed
         self.state = State.BASE_LINE_FOLLOWER
 
     def finish(self):
         self.dir_control.turn(0)
-        self.dir_control.setSpeed(0)
+        self.dir_control.speed = 0
 
 
 
