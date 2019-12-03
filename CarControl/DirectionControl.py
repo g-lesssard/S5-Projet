@@ -37,6 +37,8 @@ class DirectionControl(object):
 
     def setting_thread(self):
         self.running = True
+        if self.printing:
+            print("Thread started")
         self.setSpeed(target_speed=self.target_speed)
         self.running = False
 
@@ -47,11 +49,9 @@ class DirectionControl(object):
     @speed.setter
     def speed(self, speed):
         self.target_speed = speed
-        while self.running:
-            time.sleep(0.0001)
+        if self.running:
+            self.thread.join()
         self.thread = threading.Thread(target=self.setting_thread)
-        if self.printing:
-            print("Thread started")
         self.thread.start()
 
         
