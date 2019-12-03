@@ -9,7 +9,7 @@ config_file = '/home/projet/CarControl/config'
 
 ########################################################################################################################
 RADAR_CHANNEL = 20
-THRESHOLD_DISTANCE = 35
+THRESHOLD_DISTANCE = 30
 DIFFERENCE_THRESHOLD = 40
 ########################################################################################################################
 
@@ -78,9 +78,13 @@ class Line_Follower():
         self.sharp_turn = Event()
         self.stop_zone = Event()
         self.line_found = Event()
+        self.line_lost = Event()
+        self.line_centered = Event()
         self.printing = printing
         self.running = False
         self.fire_count = 0
+        self.loss_count = 0
+        self.center_count = 0
 
         self.pietons_count = 0
         self.stop_zone_count = 0
@@ -113,6 +117,10 @@ class Line_Follower():
             self.stop_zone += observer_method
         elif event == 'line_found':
             self.line_found += observer_method
+        elif event == 'line_lost':
+            self.line_lost += observer_method
+        elif event == 'line_centered':
+            self.line_centered += observer_method
 
 
     def removeObserver(self, observer_method, event):
@@ -123,8 +131,12 @@ class Line_Follower():
         elif event == 'stop_zone':
             self.stop_zone -= observer_method
         elif event == 'line_found':
-            self.line_found += observer_method
+            self.line_found -= observer_method
             self.fire_count = 0
+        elif event == 'line_lost':
+            self.line_lost -= observer_method
+        elif event == 'line_centered':
+            self.line_centered -= observer_method
 
     def detectLine(self):
         count = 0
@@ -136,7 +148,7 @@ class Line_Follower():
             if self.printing:
                 print("Linefollower data: {0}, count: {1}".format(self.data, count))
             self.mutex.release()
-            time.sleep(0.05)            
+            time.sleep(0.01)            
         return
 
     def startReading(self):
@@ -158,6 +170,8 @@ class Line_Follower():
         self.lookForSharpTurn()
         self.lookForStopZone()
         self.lookForLine()
+        self.lookForLoss()
+        self.lookForCenter()
 
     def lookForPietons(self):
         if (self.previous_data == [0,0,1,0,0] or self.previous_data == [0,1,1,0,0] or self.previous_data == [0,0,1,1,0]) and self.data == [0,0,0,0,0]:
@@ -186,6 +200,27 @@ class Line_Follower():
         if (self.data == [1,0,0,0,0] or self.data == [1,1,0,0,0] and self.fire_count == 0):
             self.line_found()
             self.fire_count += 1
+    
+    def lookForLoss(self):
+        if self.data == [0,0,0,0,0]:
+            self.loss_count += 1
+        else:
+            self.loss_count = 0
+        if self.loss_count == 18:
+            self.line_lost()
+            self.loss_count = 0
+
+    def lookForCenter(self):
+        line = False
+        for v in self.data:
+            if v == 1:
+                line = True
+                break
+        if line:
+            self.center_count += 1
+        if self.center_count == 3:
+            self.line_centered()
+            self.center_count = 0
         
 
 

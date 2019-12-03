@@ -12,6 +12,8 @@ class State(Enum):
     START = auto()
     BASE_LINE_FOLLOWER = auto()
     LINE_FINDER = auto()
+    LINE_LOSS = auto()
+    LINE_CENTERED = auto()
     AVOID_OBSTACLE = auto()
     PIETONS = auto()
     LOOP = auto()
@@ -19,6 +21,8 @@ class State(Enum):
     TEST = auto()
     SHARP_TURN = auto()
     SLALOM = auto()
+    EXITING_SLALOM = auto()
+    ENTERING_SLALOM = auto()
 
 
 ########################################################################################################################
@@ -34,7 +38,8 @@ class Event(object):
         return self
 
     def __isub__(self, handler):
-        self.eventHandlers.remove(handler)
+        if handler in self.eventHandlers:
+            self.eventHandlers.remove(handler)
         return self
 
     def __call__(self, *args, **keywargs):
@@ -56,6 +61,8 @@ class StateController(object):
         self.obstacle_count = 0
         self.cruising_speed = 0
 
+        self.recovering_angle = 0
+
     def startReadingThreads(self):
         self.radar.startReading()
         self.radar.addObserver(self.objectDetected)
@@ -65,17 +72,37 @@ class StateController(object):
         
 
     def objectDetected(self):
-        print("Obstacle detected, setting avoidance course...")
-        self.state = State.AVOID_OBSTACLE
+        
+        if self.state is State.SLALOM:
+            self.line_follower.removeObserver(event='line_lost', observer_method=self.lineLost)
+            self.line_follower.removeObserver(event='line_centered', observer_method=self.lineCentered())
+        if self.state is State.BASE_LINE_FOLLOWER or self.state is State.SLALOM:
+            print("Obstacle detected, setting avoidance course...")
+            self.state = State.AVOID_OBSTACLE
     
     def pietonsDetected(self):
         if self.state is State.BASE_LINE_FOLLOWER:
             print("Pietons detected, stopping...")
             self.state = State.PIETONS
 
+    def lineLost(self):
+        if self.state is State.SLALOM:
+            print("Line lost, activating criss cross")
+            self.state = State.LINE_LOSS
+            self.recovering_angle = -self.angle
+
+    def lineCentered(self):
+        if self.state is State.LINE_LOSS:
+            print("Line centered, going back to line following")
+            self.state = State.SLALOM
+        if self.state is State.SHARP_TURN:
+            print("Entering Slalom...")
+            self.state = State.ENTERING_SLALOM
+
     def lineFound(self):
-        print("Line found, following it...")
-        self.state = State.BASE_LINE_FOLLOWER
+        if self.state is State.LINE_FINDER:
+            print("Line found, following it...")
+            self.state = State.BASE_LINE_FOLLOWER
 
     def sharpTurnDetected(self):
         print('Sharp turn detected')
@@ -88,28 +115,32 @@ class StateController(object):
         input("Press ENTER to start...")
 
     def run(self):
-        #print('Car state is: {}'.format(self.state))
+        print('Car state is: {}'.format(self.state))
         if self.state is State.TEST:
             self.dir_control.setSpeed(20)
-        if self.state is State.START:
+        elif self.state is State.START:
             self.start()
-        if self.state is State.BASE_LINE_FOLLOWER:
+        elif self.state is State.BASE_LINE_FOLLOWER:
             self.follow_line()
-        if self.state is State.AVOID_OBSTACLE:
+        elif self.state is State.AVOID_OBSTACLE:
             if self.obstacle_count == 0:
                 self.avoidObstacleRight()
             elif self.obstacle_count == 1:
                 self.avoidObstacleLeft()
-        if self.state is State.LINE_FINDER:
+        elif self.state is State.LINE_FINDER:
             time.sleep(0.1)
-        if self.state is State.PIETONS:
+        elif self.state is State.PIETONS:
             self.savePietons()
-        if self.state == State.DO_STOP:
+        elif self.state == State.DO_STOP:
             self.finish()
-        if self.state is State.SHARP_TURN:
+        elif self.state is State.SHARP_TURN:
             self.sharpTurn()
-        if self.state is State.SLALOM:
+        elif self.state is State.SLALOM:
             self.follow_line_slalom()
+        elif self.state is State.LINE_LOSS:
+            self.recovering_line()
+        elif self.state is State.ENTERING_SLALOM:
+            self.enterSlalom()
 
     def start(self):
         self.cruising_speed = 60
@@ -146,29 +177,36 @@ class StateController(object):
         self.dir_control.turn(self.angle)
 
     def follow_line_slalom(self):
+        self.dir_control.setSpeed(self.cruising_speed)
         refs = self.line_follower.getData()
         if refs == [0,0,1,0,0]:
             self.angle = -0
         elif refs == [0,0,0,0,1]:
-            self.angle = 41
+            self.angle = 45
         elif refs == [0,0,0,1,1]:
-            self.angle = 41
+            self.angle = 45
         elif refs == [0,0,0,1,0]:
-            self.angle = 31
+            self.angle = 36
         elif refs == [0,0,1,1,0]:
-            self.angle = 21
+            self.angle = 26
         elif refs == [1,0,0,0,0]:
-            self.angle = -41
+            self.angle = -45
         elif refs == [1,1,0,0,0]:
-            self.angle = -41
+            self.angle = -45
         elif refs == [0,1,0,0,0]:
-            self.angle = -31
+            self.angle = -36
         elif refs == [0,1,1,0,0]:
-            self.angle = -21
+            self.angle = -26
         else:
             pass
         self.dir_control.turn(self.angle)
-        
+
+    def recovering_line(self):
+        self.dir_control.setSpeed(0)
+        self.angle = self.recovering_angle
+        self.dir_control.turn(self.angle)
+        self.dir_control.setSpeed(-50)
+
 
     def avoidObstacleRight(self):
         self.radar.removeObserver(observer_method=self.objectDetected)
@@ -178,7 +216,7 @@ class StateController(object):
         
         self.angle = 0
         self.dir_control.turn(self.angle)
-        time.sleep(1.5)
+        time.sleep(1.7)
         
         self.angle = -44
         self.dir_control.turn(self.angle)
@@ -186,11 +224,14 @@ class StateController(object):
 
         self.angle = -40
         self.dir_control.turn(self.angle)
-        time.sleep(2.2)
+        time.sleep(2)
         
         self.angle = -44
         self.dir_control.turn(self.angle)
-        time.sleep(2)
+        time.sleep(1.8)
+
+        self.angle = -25
+        self.dir_control.turn(self.angle)
         
         print("Obstacle avoided, going back to line following")
         self.obstacle_count += 1
@@ -200,21 +241,44 @@ class StateController(object):
     def sharpTurn(self):
         self.line_follower.removeObserver(observer_method=self.sharpTurnDetected, event='sharp_turn')
         self.radar.addObserver(observer_method=self.objectDetected)
+        self.dir_control.turnRight(40)
+        time.sleep(0.1)
         self.dir_control.setSpeed(0)
-        self.dir_control.turnLeft(44)
+        self.dir_control.turnLeft(30)
         self.cruising_speed = -50
         self.dir_control.setSpeed(self.cruising_speed)
         time.sleep(1.5)
 
-        self.dir_control.turnRight(0)
+
         self.cruising_speed = 60
         self.dir_control.setSpeed(self.cruising_speed)
-        time.sleep(0.3)
-
         self.dir_control.turnRight(30)
-        time.sleep(0.4)
+        time.sleep(1)
         self.dir_control.turn(0)
-        self.state = State.SLALOM      
+        self.line_follower.addObserver(event='line_lost', observer_method=self.lineLost)
+        self.line_follower.addObserver(event='line_centered', observer_method=self.lineCentered)
+        self.state = State.SLALOM
+
+    def sharpTurn2(self):
+        self.line_follower.removeObserver(observer_method=self.sharpTurnDetected, event='sharp_turn')
+        self.radar.addObserver(observer_method=self.objectDetected)
+        self.dir_control.turnRight(40)
+        time.sleep(0.1)
+        self.dir_control.setSpeed(0)
+        self.dir_control.turnLeft(30)
+        self.cruising_speed = -20
+        self.dir_control.setSpeed(self.cruising_speed)
+        self.line_follower.addObserver(event='line_lost', observer_method=self.lineLost)
+        self.line_follower.addObserver(event='line_centered', observer_method=self.lineCentered)
+
+
+    def enterSlalom(self):
+        self.angle = 40
+        self.dir_control.turnRight(self.angle)
+        self.cruising_speed = 60
+        self.dir_control.setSpeed(self.cruising_speed)
+        self.state = State.SLALOM
+
 
     def avoidObstacleLeft(self):
         self.radar.removeObserver(self.objectDetected)
@@ -232,7 +296,7 @@ class StateController(object):
 
 
     def savePietons(self):
-        self.dir_control.setSpeed(30)
+        self.dir_control.setSpeed(40)
         time.sleep(2.69)
         self.dir_control.setSpeed(0)
         time.sleep(2)
@@ -251,6 +315,5 @@ class StateController(object):
 if __name__ == '__main__':
     master = StateController(printing=True)
 
-    master.state = State.BASE_LINE_FOLLOWER
     master.run()
     master.stop()

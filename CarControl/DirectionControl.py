@@ -73,7 +73,7 @@ class DirectionControl(object):
             self.turnRight(angle)
             if angle == 44:
                 self.setWheels(wheel='right', speed=0)
-            elif angle == 41 or angle == 31 or angle == -21:
+            elif angle == 45 or angle == 41 or angle == 36 or angle == -26:
                 self.setWheels(wheel='right', speed=0)
             else:
                 self.setWheels(wheel='right', speed=self.speed)
@@ -84,7 +84,7 @@ class DirectionControl(object):
             self.turnLeft(abs(angle))
             if angle == -44:
                 self.setWheels(wheel='left', speed=0)
-            elif angle == -41 or angle == -31 or angle == -21:
+            elif angle == -45 or angle == -41 or angle == -36 or angle == -26:
                 self.setWheels(wheel='left', speed=0)
             else:
                 self.setWheels(wheel='left', speed=self.speed)
